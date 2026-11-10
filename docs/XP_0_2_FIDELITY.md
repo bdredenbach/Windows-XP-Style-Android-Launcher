@@ -36,8 +36,14 @@ choose Bliss in Display Properties > Desktop to switch.
 
 ## Validation
 
-Local build, unit tests and native emulator checks are recorded in the companion
-verification report. The native suite covers staged choices, Cancel, Apply,
+[Implementation run](https://github.com/bdredenbach/Windows-XP-Style-Android-Launcher/actions/runs/42902962756)
+and [capture follow-up](https://github.com/bdredenbach/Windows-XP-Style-Android-Launcher/actions/runs/42904128906)
+both passed: 98 unit tests, 62 core checks per API, and both independent-row suites
+on Android 11 / API 30 and Android 16 / API 36. All 18 final core captures per API
+contain visible content. The Android 16 headless compositor originally returned
+black captures; the follow-up renders the actual app window in that case and
+requires visible image content. This changes the harness only. Native app-window
+renders and compositor screenshots are distinct forms of evidence. The native suite covers staged choices, Cancel, Apply,
 folder-pane switching, backup capture, the XP Task Manager tabs and the existing
 six-scheme rotation checks. Both independent taskbar-row suites remain enabled.
 The core screenshot collector now reads app-private snapshots via run-as, avoiding

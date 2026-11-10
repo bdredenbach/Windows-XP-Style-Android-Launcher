@@ -4,7 +4,7 @@ The owner supplied `windows-xp-desktop.zip`. Its five original ICO files and REA
 
 The unmodified embedded 16/24/32/48 pixel representations, where present, are decoded to transparent PNGs under `app/src/main/assets/xp-icons/`. My Computer, Network, Documents and the empty/full Recycle Bin states use these assets throughout shared icon surfaces. The small tray network button uses the same supplied Network asset. The nearest available size at or above the requested pixel size is selected, capped at the original 48-pixel representation.
 
-The N XP app identity, Start button, hill wallpaper and other XP-era drawings remain Nth artwork. The sections below document the shared foundation's earlier artwork history.
+The N XP app identity, Start button, procedural Nth hill wallpaper and other XP-era drawings remain Nth artwork. The sections below document the shared foundation's earlier artwork history.
 
 # Nth Desktop artwork
 
@@ -15,6 +15,18 @@ The wallpaper was produced using the built-in image-generation tool. It is origi
 ## Final wallpaper prompt
 
 Use case: stylized-concept. Asset type: high resolution wallpaper for an actual Android launcher, image only, absolutely no UI or gadget mockup. Create an original aurora desktop wallpaper extremely close in mood and visual sophistication to the Windows Vista 2006 Aero era: dark midnight navy and deep teal upper region, luminous emerald green and electric cyan aurora flowing diagonally from lower left toward upper right in large graceful folded ribbons of light, subtle golden yellow glow far lower right, silky translucent light beams and atmospheric depth, clean luxurious photorealistic light rendering with fine smooth gradients, gently illuminated curved wisps. Strong dark space upper left so desktop icons read, jewel tones rather than pastel, rich black-blue corners. It should feel like a premium 2006 operating system wallpaper, not a vector illustration, no flat cut-paper waves. Portrait 9:16 composition, highest available resolution ideally 2160x3840. No text, no logos, no Windows symbol, no border, no devices, no mountains, no stars, no actual user interface. Full bleed.
+
+## Supplied XP wallpapers (0.2.0)
+
+The 20 JPEGs under `app/src/main/assets/wallpapers/xp/` are unmodified files from
+the user-supplied storef/windows-xp.themepack repository, revision
+`ec4fb5578d78783c5aed10f39a9917132b6d60ea`. Most are 800x600; Autumn is 940x705.
+This includes Bliss. The repository's MIT notice is retained in
+`third_party/xp-wallpapers/LICENSE` and `assets/wallpapers/xp/LICENSE.txt` inside
+the APK. Its source credit is https://tjkelly.com/blog/windows-xp-desktop-backgrounds/.
+These photographs and Windows branding are not claimed as original Nth artwork.
+No audio files from that collection are bundled. The optional XP screen saver is
+original Nth text/clock artwork rendered in code.
 
 ## Landscape companion
 

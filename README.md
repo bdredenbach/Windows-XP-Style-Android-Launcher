@@ -25,6 +25,12 @@ Networking and Users tabs, retaining real, Android-permitted metrics.
 
 See `docs/XP_0_2_FIDELITY.md` for references, behavior and remaining refinements.
 
+[0.2.0 verification](https://github.com/bdredenbach/Windows-XP-Style-Android-Launcher/actions/runs/42904128906)
+passed all 98 unit tests, 62 core launcher checks per API and both independent-row
+suites on Android 11 / API 30 and Android 16 / API 36. All 18 core captures per API
+contain visible content. On the headless Android 16 image, capture falls back to
+rendering the actual app window when the system compositor returns black.
+
 ## Supplied icons and taskbar handoff
 
 0.1.1 incorporates the supplied five-icon XP set, including the two Recycle Bin states. Expanded taskbar apps can move between rows, each row scrolls independently, and Start/tray/clock stay in the original bottom row. XP now saves row choices under `xp_taskbar_rows`, migrating the earlier preview’s `seven_taskbar_rows` without losing placements. Both names are accepted during backup import; new exports use the XP name. See `docs/XP_0_1_1_HANDOFF.md`.
@@ -76,4 +82,4 @@ Based on the owner's latest Seven source; the exact baseline is recorded in `doc
 - [Microsoft Windows XP Design Team: Visual Guidelines, archived mirror](https://www.retrospace.net/download/WebApplications/WindowsXPDesignGuidelines/whatsnew.htm)
 - [Microsoft Windows XP Reviewers Guide, archived original document](https://tech-insider.org/windows/research/acrobat/0108-b.pdf)
 
-The hill artwork and N XP brand are original; the Bliss photograph is not bundled. The five supplied XP icons retain their archive provenance in `ASSETS.md`. Other shared-engine artwork retains its existing provenance in `ASSETS.md` and notices. This independent Nth project is not affiliated with Microsoft. Windows is a Microsoft trademark.
+The procedural Nth hill artwork and N XP brand are original. The supplied XP wallpaper collection, including Bliss, is attributed in `third_party/xp-wallpapers/` and `ASSETS.md`. The five supplied XP icons retain their archive provenance in `ASSETS.md`. Other shared-engine artwork retains its existing provenance in `ASSETS.md` and notices. This independent Nth project is not affiliated with Microsoft. Windows is a Microsoft trademark.
