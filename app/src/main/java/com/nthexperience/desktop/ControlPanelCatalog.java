@@ -5,7 +5,7 @@ import java.util.*;
 /** One owner per setting. Category tasks and search resolve to the same destinations. */
 final class ControlPanelCatalog {
     static final String[][] CATEGORIES={
-        {"system","Performance and Maintenance","security"},
+        {"system","Performance and Maintenance","computer"},
         {"network","Network and Internet Connections","network"},{"hardware","Printers and Other Hardware","hardware"},
         {"programs","Programs","programs"},{"accounts","User Accounts","accounts"},
         {"appearance","Appearance and Themes","appearance"},{"clock","Date, Time, Language, and Regional Options","clock"},

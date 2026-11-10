@@ -19,11 +19,22 @@ final class VistaControlPanel extends VistaShell {
         super(c,store,actions,"Search Control Panel");this.wallpaper=wallpaper;classic=store.prefs.getBoolean("control_panel_classic",false);smallIcons=store.prefs.getBoolean("control_panel_small_icons",false);
         displayHost=Aero.column(c);displayHost.setVisibility(GONE);addView(displayHost,new LayoutParams(-1,0,1));
         folders.setText("Control Panel ▾");folders.setContentDescription("Control Panel navigation");commands.removeAllViews();removeView(status);
-        ViewGroup pane=(ViewGroup)side.getParent();pane.setBackground(Aero.panel(c,0xff7ba2e7,0xff6375d6,0,0xff5573be));pane.getLayoutParams().width=dp(160);side.setBackground(null);side.setPadding(dp(12),dp(14),dp(10),dp(12));
+        ViewGroup pane=(ViewGroup)side.getParent();pane.setBackground(Aero.panel(c,0xff7ba2e7,0xff6375d6,0,0xff5573be));pane.getLayoutParams().width=dp(136);side.setBackground(null);side.setPadding(dp(12),dp(14),dp(10),dp(12));
         LinearLayout location=(LinearLayout)address.getParent();int index=location.indexOfChild(address);location.removeView(address);crumbs=new LinearLayout(c);crumbs.setGravity(Gravity.CENTER_VERTICAL);crumbs.setBackground(Aero.panel(c,0xffffffff,0xfff3f9fd,1,0xff8ea6b8));crumbs.setContentDescription("Address bar");location.addView(crumbs,index,new LayoutParams(0,dp(32),1));
         LinearLayout toolbar=(LinearLayout)search.getParent();ViewGroup.LayoutParams compactQuery=search.getLayoutParams();
         for(TextView button:new TextView[]{back,forward})button.setBackground(Aero.gloss(c,new int[]{0xffeaf7ff,0xffa9c9df,0xff7397b3,0xffc9e0ee},16,0xff839baa));
-        addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{if(isDisplayPage())return;boolean wide=r-l>=dp(490);ViewGroup target=wide?location:toolbar;if(search.getParent()!=target){((ViewGroup)search.getParent()).removeView(search);if(wide){LayoutParams lp=new LayoutParams(dp(175),dp(32));lp.leftMargin=dp(6);target.addView(search,lp);}else target.addView(search,compactQuery);}toolbar.setVisibility(wide?GONE:VISIBLE);int signature=columns(classic?(smallIcons?128:108):260,classic?6:2)*10+(wide?1:0);if(signature!=layoutSignature){layoutSignature=signature;render();}});start(initial);
+        addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{if(isDisplayPage())return;boolean wide=r-l>=dp(490);ViewGroup target=wide?location:toolbar;if(search.getParent()!=target){((ViewGroup)search.getParent()).removeView(search);if(wide){LayoutParams lp=new LayoutParams(dp(175),dp(32));lp.leftMargin=dp(6);target.addView(search,lp);}else target.addView(search,compactQuery);}toolbar.setVisibility(!wide&&search.getVisibility()==VISIBLE?VISIBLE:GONE);int signature=columns(classic?(smallIcons?128:108):260,classic?6:2)*10+(wide?1:0);if(signature!=layoutSignature){layoutSignature=signature;render();}});
+        View classicBar=explorerChrome(name->{});classicBar.setBackgroundColor(XpTheme.surface(c));for(int i=0;i<((ViewGroup)classicBar).getChildCount();i++){View item=((ViewGroup)classicBar).getChildAt(i);if(item instanceof TextView)item.setOnClickListener(v->classicMenu(v,((TextView)v).getText().toString()));}revealNavigationPane();search.setVisibility(GONE);toolbar.setVisibility(GONE);
+        for(TextView button:new TextView[]{back,forward}){button.setText("");XpNavigation image=new XpNavigation(c,button==back?"back":"forward");image.setBounds(0,0,dp(25),dp(25));button.setCompoundDrawables(image,null,null,null);button.setBackground(Aero.selection(c));}
+        location.setBackgroundColor(XpTheme.surface(c));toolbar.setBackgroundColor(XpTheme.surface(c));start(initial);
+    }
+    private void classicMenu(View anchor,String name){DesktopContextMenu menu=new DesktopContextMenu(getContext(),"Control Panel "+name+" menu");
+        if(name.equals("View")){menu.checked("Category View",!classic,()->selectView(false));menu.checked("Classic View",classic,()->selectView(true));menu.item("Refresh","refresh",this::render);}
+        else if(name.equals("File")){menu.item("Close","empty",()->{View v=this;while(v.getParent() instanceof View){v=(View)v.getParent();if(v instanceof DesktopWindow){((DesktopWindow)v).closeWindow();return;}}});}
+        else if(name.equals("Edit")){menu.item("Find a setting…","search",()->{search.setVisibility(VISIBLE);((View)commands.getParent()).setVisibility(VISIBLE);search.requestFocus();});}
+        else if(name.equals("Favorites")){menu.item("My Computer","computer",()->actions.open("@computer"));menu.item("Display Properties","appearance",()->navigate("personalization"));}
+        else if(name.equals("Tools")){menu.item("Android settings…","control",()->actions.action("android:settings"));}
+        else menu.item("Help and Support","help",()->actions.open("@welcome"));ContextMenus.centered(anchor,(x,y)->ContextMenus.show(menu,anchor,x,y));
     }
     private int columns(int minimum,int maximum){int width=content.getWidth();if(width<=0)width=getWidth()>0?getWidth():dp(360);return Math.max(1,Math.min(maximum,(width-dp(32))/dp(minimum)));}
     private void selectView(boolean value){boolean same=page().equals("home")&&query().isEmpty();classic=value;store.prefs.edit().putBoolean("control_panel_classic",value).apply();navigate("home");if(same)render();}
@@ -67,19 +78,12 @@ final class VistaControlPanel extends VistaShell {
             case "clock":heading(column,"Clock appearance","Your device's local time and time zone");GadgetView preview=new GadgetView(getContext(),"clock",store,null);column.addView(preview,new LayoutParams(dp(132),dp(128)));LinearLayout faces=new LinearLayout(getContext());for(int i=0;i<2;i++){final int style=i;TextView button=Aero.button(getContext(),i==0?"Classic ivory":"Black glass",()->{store.prefs.edit().putInt("clock_style",style).apply();actions.action("gadgets");render();});faces.addView(button,new LayoutParams(0,dp(44),1));}column.addView(faces);check(column,"Show second hand","clock_seconds",true,()->actions.action("gadgets"));break;
             default:heading(column,"Control Panel","Choose Control Panel Home to view your settings.");break;
         }
-        if(compact()&&query().isEmpty())relatedFooter(column);body(scrolling(column));
+        ((View)commands.getParent()).setVisibility(search.getVisibility()==VISIBLE&&search.getParent()==commands.getParent()?VISIBLE:GONE);body(scrolling(column));
     }
     private void viewPicker(LinearLayout column){
         LinearLayout header=Aero.column(getContext());
         panelHeading(header,classic?"Control Panel":"Pick a category");
-        TextView selector=Aero.button(getContext(),"View by: "+(classic?(smallIcons?"Small icons":"Large icons"):"Category")+"  ▾",()->{});
-        selector.setOnClickListener(v->{
-            DesktopContextMenu menu=new DesktopContextMenu(getContext(),"Control Panel view");
-            menu.checked("Category",!classic,()->selectView(false));
-            menu.checked("Large icons",classic&&!smallIcons,()->selectIconSize(false));
-            menu.checked("Small icons",classic&&smallIcons,()->selectIconSize(true));
-            ContextMenus.centered(selector,(x,y)->ContextMenus.show(menu,selector,x,y));
-        });
+        TextView selector=Aero.button(getContext(),classic?"Switch to Category View":"Switch to Classic View",()->selectView(!classic));
         LayoutParams bounds=new LayoutParams(-2,dp(38));bounds.gravity=Gravity.END;bounds.bottomMargin=dp(9);
         header.addView(selector,bounds);column.addView(header);
     }

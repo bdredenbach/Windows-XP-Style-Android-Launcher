@@ -19,7 +19,7 @@ and LGPL replacement fonts are attributed in ASSETS.md and third_party notices.
 | --- | --- |
 | Typography | Wine Tahoma replacement throughout native text/controls, with regular and bold faces |
 | Windows | 34dp caption, 3dp frame, smaller icon, 32dp caption touch targets with 25dp artwork, blue Luna contours, classic bevels, smaller resize-grip decoration |
-| Controls | Beveled command buttons, orange selected/hover tab edge, green checks, XP scrollbar colors, solid blue menu highlight with white text |
+| Controls | Beveled command buttons, orange selected/hover tab edge, green checks, bordered text fields and dropdowns, XP scrollbar colors, solid blue menu highlight with white text |
 | Start | Compact two-column proportions, Internet/E-mail slots, pinned/frequent grouping, compact Places, colored footer navigation signs |
 | Taskbar | 40dp app rows, 44dp base bar, single-line clock, lighter notification area, visible network/volume icons, Show Desktop next to Quick Launch |
 | Desktop | 36dp default icon; explicit custom size retained; tighter vertical spacing |

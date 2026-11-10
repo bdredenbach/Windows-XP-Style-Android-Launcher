@@ -276,7 +276,7 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         if (page.equals("Start")) { centerStart(); return; }
         List<MediaLibrary.Entry> items = visibleItems();
         if (items.isEmpty()) {
-            TextView empty = label(page.equals("Queue") ? "The queue is empty" : "Choose Add files to build your library", 15);
+            TextView empty = label(page.equals("Queue") ? "The queue is empty" : center?"Choose Add files to build your library":"Use File > Open to build your library", 15);
             empty.setGravity(Gravity.CENTER);
             body.addView(empty, new FrameLayout.LayoutParams(-1, -1));
         } else if (center && !page.equals("Queue")) {
