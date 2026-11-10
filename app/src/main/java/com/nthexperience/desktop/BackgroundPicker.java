@@ -61,7 +61,7 @@ final class BackgroundPicker extends LinearLayout {
         TextView hint=Aero.text(context,"Choose a picture, or check several to create a slide show.",12,0xff4e6676);
         hint.setPadding(0,dp(5),0,dp(8));addView(hint);
         addView(Aero.text(context,"Picture location",12,Aero.INK));
-        String[] locations={"Desktop backgrounds","Alpine and coastal landscapes","Architecture","Illustrations","My Pictures"};
+        String[] locations={"Desktop backgrounds","Alpine and coastal landscapes","Architecture","Illustrations","My Pictures","Windows XP wallpapers"};
         Spinner location=spinner(locations,"Background picture location");
         int start=photos.contains(current)?4:draft.optInt("location",0);
         location.setSelection(Math.max(0,Math.min(locations.length-1,start)));addView(location,new LayoutParams(-1,dp(42)));
@@ -167,7 +167,7 @@ final class BackgroundPicker extends LinearLayout {
             return;
         }
         for(int group=0;group<DesktopBackgrounds.GROUPS.length;group++){
-            if(location!=0&&group!=location)continue;
+            if(location!=0&&group!=(location==5?4:location))continue;
             List<String> pictures=new ArrayList<>();
             for(int id=0;id<DesktopBackgrounds.NAMES.length;id++)
                 if(DesktopBackgrounds.group(id)==group)pictures.add(DesktopBackgrounds.stock(id));

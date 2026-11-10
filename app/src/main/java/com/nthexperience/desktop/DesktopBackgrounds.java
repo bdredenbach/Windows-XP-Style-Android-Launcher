@@ -10,8 +10,11 @@ import java.util.List;
 
 final class DesktopBackgrounds {
     static final String[] NAMES={"Aero","Twilight","Meadow","Nth Hills","Harmony","Alpine Morning",
-            "Pacific Dusk","Canyon Light","Glass Pavilion","Midnight Circuit","Paper Skies"};
-    static final String[] GROUPS={"Aero and Abstract","Landscapes","Architecture","Illustrations"};
+            "Pacific Dusk","Canyon Light","Glass Pavilion","Midnight Circuit","Paper Skies",
+            "Bliss","Ascent","Autumn","Azul","Crystal","Follow","Friend","Home","Moon Flower",
+            "Peace","Power","Purple Flower","Radiance","Red Moon Desert","Ripple","Stonehenge",
+            "Tulips","Vortec Space","Wind","Windows XP"};
+    static final String[] GROUPS={"Aero and Abstract","Landscapes","Architecture","Illustrations","Windows XP"};
     static final int[] INTERVALS={10,30,60,180,600,1800,3600,21600,86400};
     static final String[] INTERVAL_LABELS={"10 seconds","30 seconds","1 minute","3 minutes","10 minutes",
             "30 minutes","1 hour","6 hours","1 day"};
@@ -19,7 +22,7 @@ final class DesktopBackgrounds {
     static final int LIMIT=24;
     static final String SLIDES="wallpaper_slides",INTERVAL="wallpaper_interval",SHUFFLE="wallpaper_shuffle";
 
-    static int group(int id){return id<5||id==9?0:id<8?1:id==8?2:3;}
+    static int group(int id){return id>=XpWallpapers.FIRST?4:id<5||id==9?0:id<8?1:id==8?2:3;}
     static String stock(int id){return "#"+id;}
     static int stockId(String key){
         if(!key.startsWith("#"))return -1;

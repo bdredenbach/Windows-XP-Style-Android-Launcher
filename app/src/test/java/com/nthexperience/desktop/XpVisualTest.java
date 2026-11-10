@@ -37,11 +37,13 @@ public class XpVisualTest {
                 save(root,new File(output,"start-"+scheme+suffix+".png"));
                 menu.hide();activity.open("@computer");layout(root);VistaExplorer explorer=(VistaExplorer)find(root,VistaExplorer.class);assertNotNull(explorer);assertTrue(explorer.content.getChildAt(0).getHeight()>0);save(root,new File(output,"explorer-"+scheme+suffix+".png"));
                 activity.open("setting:page:personalization");layout(root);save(root,new File(output,"display-"+scheme+suffix+".png"));
+                View desktop=findDescription(root,"Display tab: Desktop");assertNotNull(desktop);desktop.performClick();layout(root);save(root,new File(output,"desktop-"+scheme+suffix+".png"));
             }
         }
     }
     void layout(View root){int width=root.getResources().getConfiguration().screenWidthDp,height=root.getResources().getConfiguration().screenHeightDp;for(int pass=0;pass<4;pass++){force(root);root.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY));root.layout(0,0,width,height);org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();}}
     void force(View v){v.forceLayout();if(v instanceof ViewGroup)for(int i=0;i<((ViewGroup)v).getChildCount();i++)force(((ViewGroup)v).getChildAt(i));}
+    View findDescription(View view,String description){if(description.equals(view.getContentDescription()))return view;if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){View found=findDescription(((ViewGroup)view).getChildAt(i),description);if(found!=null)return found;}return null;}
     View find(View view,Class<?> type){if(type.isInstance(view))return view;if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++){View found=find(((ViewGroup)view).getChildAt(i),type);if(found!=null)return found;}return null;}
     void save(View view,File file)throws Exception{Bitmap image=Bitmap.createBitmap(view.getWidth(),view.getHeight(),Bitmap.Config.ARGB_8888);view.draw(new Canvas(image));try(FileOutputStream out=new FileOutputStream(file)){image.compress(Bitmap.CompressFormat.PNG,100,out);}image.recycle();}
 }

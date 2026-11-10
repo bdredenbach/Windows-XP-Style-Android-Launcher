@@ -29,7 +29,24 @@ public final class XpSmoke extends Instrumentation {
         View app=find(root,v->"Open Programs: Notepad".equals(v.getContentDescription()));check(app!=null,"Pinned Notepad exists");tap(app);settle();
         check(window("@notes")!=null,"Real program row tap opens Notepad");
         ui(()->home.open("@computer"));settle();check(find(root,v->"Navigation: My Documents".equals(v.getContentDescription()))!=null,"Explorer XP tasks reachable");shot("02-explorer-blue");
-        ui(()->home.open("setting:page:personalization"));settle();check(find(root,v->"Apply theme: Silver".equals(v.getContentDescription()))!=null,"Display Properties offers XP schemes");shot("03-display-properties");
+        ui(()->home.open("setting:page:personalization"));settle();check(find(root,v->"XP theme".equals(v.getContentDescription()))!=null,"Display Properties offers XP schemes");shot("03-display-properties");
+        for(String name:XpDisplayProperties.TABS)check(find(root,v->("Display tab: "+name).equals(v.getContentDescription()))!=null,"Display tab exists: "+name);
+        ui(()->((Spinner)find(root,v->"XP theme".equals(v.getContentDescription()))).setSelection(2));settle();check(XpTheme.scheme(context)==0,"Theme selection is staged");
+        ui(()->find(root,v->"Cancel".equals(v.getContentDescription())).performClick());settle();check(XpTheme.scheme(context)==0,"Cancel preserves theme");
+        ui(()->home.open("@appearance"));settle();ui(()->find(root,v->"Display tab: Desktop".equals(v.getContentDescription())).performClick());settle();
+        ListView pictures=(ListView)find(root,v->"Desktop background list".equals(v.getContentDescription()));
+        ui(()->pictures.performItemClick(pictures.getChildAt(0),1,pictures.getAdapter().getItemId(1)));settle();
+        check(store.prefs.getInt("wallpaper",-1)==XpWallpapers.FIRST,"Wallpaper selection is staged");
+        ui(()->find(root,v->"Apply".equals(v.getContentDescription())).performClick());settle();check(store.prefs.getInt("wallpaper",-1)==XpWallpapers.FIRST+1,"Apply commits wallpaper");shot("05-display-desktop");
+        ui(()->find(root,v->"Display tab: Screen Saver".equals(v.getContentDescription())).performClick());settle();check(find(root,v->v instanceof XpScreenSaver)!=null,"Screen saver preview present");
+        ui(()->find(root,v->"Cancel".equals(v.getContentDescription())).performClick());settle();
+        ui(()->home.open("@computer"));settle();ui(()->find(root,v->"Navigation folders".equals(v.getContentDescription())).performClick());settle();
+        check(find(root,v->"XP folders tree".equals(v.getContentDescription()))!=null,"Folders switches to tree");
+        check(DesktopBackup.parse(DesktopBackup.snapshot(store).toString()).values.get("xp_explorer_tree").equals(true),"Backup captures folder tree mode");
+        ui(()->find(root,v->"Navigation folders".equals(v.getContentDescription())).performClick());settle();check(find(root,v->"XP common tasks".equals(v.getContentDescription()))!=null,"Folders returns to common tasks");
+        ui(()->home.open("@taskmanager"));settle();check(find(root,v->"Task Manager Services".equals(v.getContentDescription()))==null,"XP omits later Services tab");
+        ui(()->find(root,v->"Task Manager Performance".equals(v.getContentDescription())).performClick());settle();shot("06-taskmanager-performance");
+
         // A real hold invokes the options route retained from Seven's Start touch fix.
         ui(()->find(root,v->v instanceof XpStartButton).performClick());settle();app=find(root,v->"Open Programs: Notepad".equals(v.getContentDescription()));
         hold(app);settle();getUiAutomation().performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK);settle();
@@ -56,5 +73,5 @@ public final class XpSmoke extends Instrumentation {
     void tap(View view)throws Exception{check(view!=null,"Tap target exists");int[] at=new int[2];view.getLocationOnScreen(at);long now=SystemClock.uptimeMillis();for(int action:new int[]{MotionEvent.ACTION_DOWN,MotionEvent.ACTION_UP}){MotionEvent event=MotionEvent.obtain(now,SystemClock.uptimeMillis(),action,at[0]+view.getWidth()/2f,at[1]+view.getHeight()/2f,0);event.setSource(InputDevice.SOURCE_TOUCHSCREEN);check(getUiAutomation().injectInputEvent(event,true),"Native tap accepted");event.recycle();if(action==MotionEvent.ACTION_DOWN)Thread.sleep(65);}}
     void hold(View view)throws Exception{check(view!=null,"Hold target exists");int[] at=new int[2];view.getLocationOnScreen(at);long now=SystemClock.uptimeMillis();MotionEvent down=MotionEvent.obtain(now,now,MotionEvent.ACTION_DOWN,at[0]+view.getWidth()/2f,at[1]+view.getHeight()/2f,0);down.setSource(InputDevice.SOURCE_TOUCHSCREEN);check(getUiAutomation().injectInputEvent(down,true),"Native hold down accepted");Thread.sleep(850);MotionEvent up=MotionEvent.obtain(now,SystemClock.uptimeMillis(),MotionEvent.ACTION_UP,down.getX(),down.getY(),0);up.setSource(InputDevice.SOURCE_TOUCHSCREEN);check(getUiAutomation().injectInputEvent(up,true),"Native hold up accepted");down.recycle();up.recycle();}
     void invoke(String name){try{java.lang.reflect.Method method=MainActivity.class.getDeclaredMethod(name);method.setAccessible(true);method.invoke(home);}catch(Exception failure){throw new RuntimeException(failure);}}
-    void shot(String name)throws Exception{Bitmap bitmap=getUiAutomation().takeScreenshot();check(bitmap!=null,"Screenshot captured: "+name);File dir=new File(getTargetContext().getExternalFilesDir(null),"xp-verification");dir.mkdirs();try(FileOutputStream out=new FileOutputStream(new File(dir,name+".png"))){bitmap.compress(Bitmap.CompressFormat.PNG,100,out);}bitmap.recycle();}
+    void shot(String name)throws Exception{Bitmap bitmap=getUiAutomation().takeScreenshot();check(bitmap!=null,"Screenshot captured: "+name);File dir=new File(getTargetContext().getFilesDir(),"xp-verification");dir.mkdirs();try(FileOutputStream out=new FileOutputStream(new File(dir,name+".png"))){bitmap.compress(Bitmap.CompressFormat.PNG,100,out);}bitmap.recycle();}
 }

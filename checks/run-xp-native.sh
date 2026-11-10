@@ -3,7 +3,9 @@ set -euo pipefail
 pkg=com.nthexperience.desktop.xp
 collect() {
   mkdir -p screenshots
-  adb pull "/sdcard/Android/data/$pkg/files/xp-verification" screenshots/ >/dev/null 2>&1 || true
+  if adb shell run-as "$pkg" test -d files/xp-verification; then
+    adb exec-out run-as "$pkg" tar -C files -cf - xp-verification | tar -xf - -C screenshots/ || true
+  fi
   for name in 'xp-independent-rows-luna-blue.png' 'xp-independent-rows-silver.png' 'xp-independent-rows-windows-classic.png' 'xp-independent-rows-failure.png'; do
     if adb shell run-as "$pkg" test -f "files/$name"; then
       adb exec-out run-as "$pkg" cat "files/$name" > "screenshots/$name" || true

@@ -1012,7 +1012,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         worker.execute(()->{String result;try{DesktopBackup.Plan plan=undo?DesktopBackup.staged(this,DesktopBackup.UNDO):selected;DesktopBackup.apply(this,store,plan,undo);result=undo?"Your previous desktop was recovered.":"Desktop restored. Undo last restore is available in Backup and Restore.";}catch(Exception error){result="Restore did not finish: "+error.getMessage();}String message=result;main.post(()->{if(destroyed)return;getIntent().putExtra("backup_status",message);recreate();});});
     }
     private void computer(){explorer("@computer","computer");}
-    private void appearance(){controlPanel("@appearance","Personalization","personalization");}
+    private void appearance(){controlPanel("@appearance","Display Properties","personalization");}
     private void controlPanel(String id,String title,String page){if(restoreTool(id))return;window(id,title,new VistaControlPanel(this,store,wallpaper,vistaActions,page));}
     private void explorer(String id,String page){
         if(restoreTool(id))return;int opened=0;for(DesktopWindow existing:orderedWindows())if(existing.body instanceof VistaExplorer)opened++;if(opened>=12){toast("Close a folder window before opening another (12 maximum).");return;}
@@ -1417,7 +1417,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         List<DesktopWindow> ordered=orderedWindows();Collections.reverse(ordered);
         for(DesktopWindow window:ordered)if(window.getVisibility()==View.VISIBLE&&window.body instanceof VistaControlPanel){
             VistaControlPanel panel=(VistaControlPanel)window.body;
-            if(panel.page().equals("background")){panel.wallpaperChosen(photos);return;}
+            if(panel.page().equals("background")||panel.isDisplayPage()){panel.wallpaperChosen(photos);return;}
         }
         open("setting:page:background");
         DesktopWindow panel=windows.get("@control");

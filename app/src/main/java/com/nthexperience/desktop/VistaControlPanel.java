@@ -12,16 +12,18 @@ final class VistaControlPanel extends VistaShell {
     private static final String[][] CATEGORIES=ControlPanelCatalog.CATEGORIES;
     static void searchItems(String query,List<StartSearch.Result> out){for(ControlPanelCatalog.Hit hit:ControlPanelCatalog.search(query))out.add(new StartSearch.Result("setting:"+hit.destination,hit.title,"Control Panel",hit.owner.icon,null,false));}
     private final AeroWallpaper wallpaper;
+    private final LinearLayout displayHost;private XpDisplayProperties display;private String displayPage="";
     private JSONObject backgroundDraft=new JSONObject();private boolean classic,smallIcons;private final LinearLayout crumbs;private int layoutSignature=-1;
     private EditText nameInput;private String nameDraft;
     VistaControlPanel(Context c,DesktopStore store,AeroWallpaper wallpaper,Actions actions,String initial){
         super(c,store,actions,"Search Control Panel");this.wallpaper=wallpaper;classic=store.prefs.getBoolean("control_panel_classic",false);smallIcons=store.prefs.getBoolean("control_panel_small_icons",false);
+        displayHost=Aero.column(c);displayHost.setVisibility(GONE);addView(displayHost,new LayoutParams(-1,0,1));
         folders.setText("Control Panel ▾");folders.setContentDescription("Control Panel navigation");commands.removeAllViews();removeView(status);
         ViewGroup pane=(ViewGroup)side.getParent();pane.setBackground(Aero.panel(c,0xfff8fbff,0xffe8f1fa,0,0xffc6d8e6));pane.getLayoutParams().width=dp(160);side.setBackground(null);side.setPadding(dp(12),dp(14),dp(10),dp(12));
         LinearLayout location=(LinearLayout)address.getParent();int index=location.indexOfChild(address);location.removeView(address);crumbs=new LinearLayout(c);crumbs.setGravity(Gravity.CENTER_VERTICAL);crumbs.setBackground(Aero.panel(c,0xffffffff,0xfff3f9fd,1,0xff8ea6b8));crumbs.setContentDescription("Address bar");location.addView(crumbs,index,new LayoutParams(0,dp(32),1));
         LinearLayout toolbar=(LinearLayout)search.getParent();ViewGroup.LayoutParams compactQuery=search.getLayoutParams();
         for(TextView button:new TextView[]{back,forward})button.setBackground(Aero.gloss(c,new int[]{0xffeaf7ff,0xffa9c9df,0xff7397b3,0xffc9e0ee},16,0xff839baa));
-        addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{boolean wide=r-l>=dp(490);ViewGroup target=wide?location:toolbar;if(search.getParent()!=target){((ViewGroup)search.getParent()).removeView(search);if(wide){LayoutParams lp=new LayoutParams(dp(175),dp(32));lp.leftMargin=dp(6);target.addView(search,lp);}else target.addView(search,compactQuery);}toolbar.setVisibility(wide?GONE:VISIBLE);int signature=columns(classic?(smallIcons?128:108):260,classic?6:2)*10+(wide?1:0);if(signature!=layoutSignature){layoutSignature=signature;render();}});start(initial);
+        addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{if(isDisplayPage())return;boolean wide=r-l>=dp(490);ViewGroup target=wide?location:toolbar;if(search.getParent()!=target){((ViewGroup)search.getParent()).removeView(search);if(wide){LayoutParams lp=new LayoutParams(dp(175),dp(32));lp.leftMargin=dp(6);target.addView(search,lp);}else target.addView(search,compactQuery);}toolbar.setVisibility(wide?GONE:VISIBLE);int signature=columns(classic?(smallIcons?128:108):260,classic?6:2)*10+(wide?1:0);if(signature!=layoutSignature){layoutSignature=signature;render();}});start(initial);
     }
     private int columns(int minimum,int maximum){int width=content.getWidth();if(width<=0)width=getWidth()>0?getWidth():dp(360);return Math.max(1,Math.min(maximum,(width-dp(32))/dp(minimum)));}
     private void selectView(boolean value){boolean same=page().equals("home")&&query().isEmpty();classic=value;store.prefs.edit().putBoolean("control_panel_classic",value).apply();navigate("home");if(same)render();}
@@ -29,7 +31,20 @@ final class VistaControlPanel extends VistaShell {
     private CheckBox usageCheckbox;
     private View usageHelp;
 
+    boolean isDisplayPage(){return page().equals("personalization")||page().equals("colors");}
+    private void updateDisplayCaption(){View current=this;while(current.getParent() instanceof View){current=(View)current.getParent();if(current instanceof DesktopWindow){((DesktopWindow)current).caption(isDisplayPage()?"Display Properties":"Control Panel");break;}}}
+    @Override protected void onAttachedToWindow(){super.onAttachedToWindow();updateDisplayCaption();}
+    private void renderDisplay(){
+        updateDisplayCaption();
+        if(display!=null)display.dispose();
+        if(!displayPage.equals(page())){GadgetLayout.put(backgroundDraft,"xpTab",page().equals("colors")?"Appearance":backgroundDraft.optString("xpTab","Themes"));displayPage=page();}
+        for(int i=0;i<getChildCount();i++)getChildAt(i).setVisibility(getChildAt(i)==displayHost?VISIBLE:GONE);
+        displayHost.removeAllViews();display=new XpDisplayProperties(getContext(),store,backgroundDraft,"Themes",actions,()->{View v=this;while(v.getParent() instanceof View){v=(View)v.getParent();if(v instanceof DesktopWindow){((DesktopWindow)v).closeWindow();return;}}});displayHost.addView(display,new LayoutParams(-1,-1));
+    }
     @Override void render(){
+        if(isDisplayPage()){renderDisplay();return;}
+        updateDisplayCaption();
+        if(display!=null){display.dispose();display=null;for(int i=0;i<getChildCount();i++)getChildAt(i).setVisibility(getChildAt(i)==displayHost?GONE:VISIBLE);displayHost.removeAllViews();}
         usageCheckbox=null;usageHelp=null;
         if(nameInput!=null)nameDraft=nameInput.getText().toString();nameInput=null;renderPane();LinearLayout column=column();String page=page();updateAddress();status.setText("Nth Desktop  •  "+title(page));
         if(!query().isEmpty())searchResults(column);
@@ -125,7 +140,7 @@ final class VistaControlPanel extends VistaShell {
     private String title(String page){if(page.equals("category:security"))return "System and Security";if(page.startsWith("category:"))for(String[] category:CATEGORIES)if(category[0].equals(page.substring(9)))return category[1];ControlPanelCatalog.Panel owner=ControlPanelCatalog.owner("page:"+page);if(owner!=null){if(owner.destination.equals("page:"+page))return owner.title;for(ControlPanelCatalog.Task task:owner.tasks)if(task.destination.equals("page:"+page))return task.title;}return "Control Panel";}
     void wallpaperChosen(List<String> photos){
         BackgroundPicker.imported(backgroundDraft,photos);
-        if(page().equals("background"))render();else navigate("background");
+        if(isDisplayPage()){GadgetLayout.put(backgroundDraft,"xpTab","Desktop");render();}else if(page().equals("background"))render();else navigate("background");
     }
     private void backgrounds(LinearLayout column){
         column.addView(new BackgroundPicker(getContext(),store,backgroundDraft,()->actions.action("wallpaper-browse"),
@@ -213,6 +228,7 @@ final class VistaControlPanel extends VistaShell {
     }
     @Override boolean canGoUp(){return parentPage(page())!=null;}
     @Override void goUp(){String parent=parentPage(page());if(parent!=null)navigate(parent);}
+    @Override void close(){if(display!=null)display.dispose();}
     @Override JSONObject extraState(){JSONObject result=new JSONObject();GadgetLayout.put(result,"backgroundDraft",backgroundDraft);GadgetLayout.put(result,"classic",classic);if(nameInput!=null)GadgetLayout.put(result,"nameDraft",nameInput.getText().toString());return result;}
     @Override void restoreExtra(JSONObject value){if(value!=null){JSONObject saved=value.optJSONObject("backgroundDraft");if(saved!=null)backgroundDraft=saved;classic=value.optBoolean("classic");nameDraft=value.optString("nameDraft",null);}}
 }

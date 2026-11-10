@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Original, resolution-independent aurora artwork. No Microsoft assets. */
+/** Desktop backgrounds: original Nth scenery, imported photos and the attributed XP pack. */
 final class AeroWallpaper extends View {
     static final int SEVEN = 3;
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -42,6 +42,7 @@ final class AeroWallpaper extends View {
     @Override protected void onDraw(Canvas c) {
         float w = getWidth(), h = getHeight();
         if(photo!=null&&!photo.isRecycled()){drawPhoto(c,w,h);return;}
+        if(XpWallpapers.contains(theme)){Bitmap image=XpWallpapers.image(getContext(),theme,!following&&getWidth()<Aero.dp(getContext(),240));if(image!=null){drawPicture(c,w,h,image,image.getWidth(),image.getHeight());return;}}
         if(theme==SEVEN){xpLandscape.draw(c,w,h);return;}
         if(theme>SEVEN&&theme<DesktopBackgrounds.NAMES.length){scenery.draw(c,w,h,theme);return;}
         if(artwork!=null){
@@ -70,6 +71,7 @@ final class AeroWallpaper extends View {
         for(int i=0;i<24;i++) { float x=((i*167+41)%997)/997f*w, y=((i*107+73)%997)/997f*h; c.drawCircle(x,y,1+(i%3),paint); }
     }
     void draft(int theme,Bitmap image,int width,int height,String position,int background){this.theme=theme;photo=image;photoWidth=width;photoHeight=height;this.position=position;this.background=background;softened=null;appearanceChanged();}
+    void preview(String key,String placement,int color){position=placement;background=color;display(key);}
     void resumeSlides(){resumed=true;reload();}
     void pauseSlides(){resumed=false;removeCallbacks(rotation);}
     boolean hasSlideshow(){return slides.size()>1;}
@@ -131,7 +133,8 @@ final class AeroWallpaper extends View {
             });
         });
     }
-    private void drawPhoto(Canvas canvas,float width,float height){canvas.drawColor(background);paint.setShader(null);paint.setColorFilter(null);paint.setAlpha(255);paint.setFilterBitmap(true);float scale=position.equals("Fit")?Math.min(width/photo.getWidth(),height/photo.getHeight()):Math.max(width/photo.getWidth(),height/photo.getHeight());float w=photo.getWidth()*scale,h=photo.getHeight()*scale;
+    private void drawPhoto(Canvas canvas,float width,float height){drawPicture(canvas,width,height,photo,photoWidth,photoHeight);}
+    private void drawPicture(Canvas canvas,float width,float height,Bitmap photo,int photoWidth,int photoHeight){canvas.drawColor(background);paint.setShader(null);paint.setColorFilter(null);paint.setAlpha(255);paint.setFilterBitmap(true);float scale=position.equals("Fit")?Math.min(width/photo.getWidth(),height/photo.getHeight()):Math.max(width/photo.getWidth(),height/photo.getHeight());float w=photo.getWidth()*scale,h=photo.getHeight()*scale;
         if(position.equals("Stretch")){w=width;h=height;}
         if(position.equals("Center")||position.equals("Tile")){float displayScale=following?1:width/Math.max(1,getResources().getDisplayMetrics().widthPixels);w=Math.max(1,photoWidth)*displayScale;h=Math.max(1,photoHeight)*displayScale;}
         if(position.equals("Tile")){BitmapShader shader=new BitmapShader(photo,Shader.TileMode.REPEAT,Shader.TileMode.REPEAT);Matrix matrix=new Matrix();matrix.setScale(w/photo.getWidth(),h/photo.getHeight());shader.setLocalMatrix(matrix);paint.setShader(shader);canvas.drawRect(0,0,width,height,paint);paint.setShader(null);}else canvas.drawBitmap(photo,null,new RectF((width-w)/2,(height-h)/2,(width+w)/2,(height+h)/2),paint);

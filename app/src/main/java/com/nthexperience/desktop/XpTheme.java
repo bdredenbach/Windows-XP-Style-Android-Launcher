@@ -27,6 +27,7 @@ final class XpTheme {
         SharedPreferences.Editor edit=store.prefs.edit();
         if(!store.prefs.contains("xp_initialized")){
             edit.putBoolean("xp_initialized",true);
+            if(!store.prefs.contains("wallpaper")&&!store.prefs.contains("wallpaper_photo")&&!store.prefs.contains(DesktopBackgrounds.SLIDES))edit.putInt("wallpaper",XpWallpapers.FIRST);
             if(!store.prefs.contains(KEY))edit.putInt(KEY,0);
             if(!store.prefs.contains("taskbar_show_labels"))edit.putBoolean("taskbar_show_labels",true);
             if(!store.prefs.contains("taskbar_grouping"))edit.putString("taskbar_grouping","When full");

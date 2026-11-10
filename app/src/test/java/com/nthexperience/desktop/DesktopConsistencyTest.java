@@ -108,7 +108,8 @@ public class DesktopConsistencyTest {
         TaskManagerPanel panel=new TaskManagerPanel(context,new TaskManagerPanel.Host(){
             public List<TaskManagerPanel.Task> tasks(){return Collections.emptyList();}public View icon(String id){return new View(context);}public void switchTo(String id){}public void end(String id){}public void appInfo(String id){}public void newTask(){}public void close(){}
         });
-        for(String page:new String[]{"Applications","Processes","Services","Performance","Networking","Users"})assertNotNull(page,find(panel,"Task Manager "+page));
+        for(String page:new String[]{"Applications","Processes","Performance","Networking","Users"})assertNotNull(page,find(panel,"Task Manager "+page));
+        assertNull(find(panel,"Task Manager Services"));
         panel.close();
     }
     private static View find(View view,String description){if(description.equals(view.getContentDescription()==null?null:view.getContentDescription().toString()))return view;if(view instanceof ViewGroup){ViewGroup group=(ViewGroup)view;for(int i=0;i<group.getChildCount();i++){View found=find(group.getChildAt(i),description);if(found!=null)return found;}}return null;}
