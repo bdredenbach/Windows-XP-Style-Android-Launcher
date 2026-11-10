@@ -47,7 +47,7 @@ final class XpDisplayProperties extends LinearLayout {
         if(values!=null)for(int i=0;i<Math.min(values.length(),DesktopBackgrounds.LIMIT);i++){String value=values.optString(i);if(DesktopBackgrounds.valid(value)&&!keys.contains(value))keys.add(value);}return keys;}
     private void render(){
         if(preview!=null){preview.close();preview=null;}
-        tabs.removeAllViews();for(String name:TABS){TextView item=Aero.text(getContext(),name,12,Aero.INK);item.setGravity(Gravity.CENTER);item.setPadding(dp(10),0,dp(10),0);item.setFocusable(true);item.setSelected(name.equals(tab));item.setContentDescription("Display tab: "+name);item.setBackground(Aero.panel(getContext(),name.equals(tab)?0xffffffff:XpTheme.surface(getContext()),XpTheme.surface(getContext()),2,0xffaaa69c));item.setOnClickListener(v->{tab=name;put("xpTab",tab);render();});tabs.addView(item,new LayoutParams(-2,dp(38)));}
+        tabs.removeAllViews();for(String name:TABS){TextView item=Aero.text(getContext(),name,12,Aero.INK);item.setGravity(Gravity.CENTER);item.setPadding(dp(10),0,dp(10),0);item.setFocusable(true);item.setSelected(name.equals(tab));item.setContentDescription("Display tab: "+name);item.setBackground(XpControls.tab(getContext()));item.setOnClickListener(v->{tab=name;put("xpTab",tab);render();});tabs.addView(item,new LayoutParams(-2,dp(38)));}
         body.removeAllViews();
         switch(tab){case "Themes":themes();break;case "Desktop":desktop();break;case "Appearance":appearance();break;case "Screen Saver":screenSaver();break;default:settings();}
         apply.setEnabled(changed());apply.setAlpha(apply.isEnabled()?1:.45f);

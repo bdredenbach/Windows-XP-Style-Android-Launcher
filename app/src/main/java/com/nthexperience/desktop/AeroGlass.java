@@ -42,8 +42,8 @@ final class AeroGlass extends Drawable {
         float d=context.getResources().getDisplayMetrics().density;
         if(style==WINDOW||style==START||style==TASKBAR){
             if(peek){p.setShader(null);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2*d);p.setColor(0xff316ac5);c.drawRect(rect,p);p.setStyle(Paint.Style.FILL);return;}
-            android.graphics.drawable.Drawable chrome=XpTheme.chrome(context,style);chrome.setBounds(getBounds());chrome.draw(c);
-            if(style==WINDOW&&!active){p.setShader(null);p.setColor(0x557b91b4);c.drawRect(rect.left,rect.top,rect.right,Math.min(rect.bottom,rect.top+50*d),p);}
+            android.graphics.drawable.Drawable chrome=XpTheme.chrome(context,style,active);chrome.setBounds(getBounds());chrome.draw(c);
+
             return;
         }
         if(style==SIDEBAR)return;
@@ -51,10 +51,10 @@ final class AeroGlass extends Drawable {
         int[] palette=XpTheme.palette(context);int top=active||pressed?palette[2]:palette[0],bottom=active||pressed?palette[1]:palette[1];
         if(XpTheme.scheme(context)==5){top=active||pressed?0xffbdb9b1:0xffece8df;bottom=0xffd4d0c8;}
         p.setShader(new LinearGradient(0,rect.top,0,rect.bottom,top,bottom,Shader.TileMode.CLAMP));
-        c.drawRoundRect(rect.left+d,rect.top+4*d,rect.right-d,rect.bottom-4*d,3*d,3*d,p);p.setShader(null);
-        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(d);p.setColor(hot||focused?0xffffdd69:0xff9abce9);
-        c.drawRoundRect(rect.left+d,rect.top+4*d,rect.right-d,rect.bottom-4*d,3*d,3*d,p);p.setStyle(Paint.Style.FILL);
-        if(progress>=0){p.setColor(0xff77b948);c.drawRect(rect.left+2*d,rect.bottom-7*d,rect.left+(rect.width()-4*d)*Math.min(100,progress)/100f,rect.bottom-4*d,p);}
+        c.drawRoundRect(rect.left+d,rect.top+3*d,rect.right-d,rect.bottom-3*d,3*d,3*d,p);p.setShader(null);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(d);p.setColor(hot||focused?0xffffdd69:0xff2a57b7);
+        c.drawRoundRect(rect.left+d,rect.top+3*d,rect.right-d,rect.bottom-3*d,3*d,3*d,p);p.setStyle(Paint.Style.FILL);
+        if(progress>=0){p.setColor(0xff77b948);c.drawRect(rect.left+2*d,rect.bottom-7*d,rect.left+(rect.width()-4*d)*Math.min(100,progress)/100f,rect.bottom-3*d,p);}
     }
     @Override public void draw(Canvas c){
         if(wallpaper!=null){drawXp(c);return;}
@@ -99,7 +99,7 @@ final class AeroGlass extends Drawable {
         if(style==TASKBUTTON&&progress>=-1){
             p.setColor(progress<0?0xff68acd2:0xff6cc564);
             float portion=progress<0?1:Math.max(.04f,Math.min(1,progress/100f));
-            c.drawRect(rect.left,rect.bottom-4*d,rect.left+rect.width()*portion,rect.bottom,p);
+            c.drawRect(rect.left,rect.bottom-3*d,rect.left+rect.width()*portion,rect.bottom,p);
         }
         c.restoreToCount(save);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(d);p.setColor(style==WINDOW?0xc5f3fbff:0x90b8ced9);c.drawRoundRect(rect.left+d*.5f,rect.top+d*.5f,rect.right-d*.5f,rect.bottom-d*.5f,radius,radius,p);
         p.setColor(0x55000000);c.drawLine(rect.left,rect.bottom-d,rect.right,rect.bottom-d,p);

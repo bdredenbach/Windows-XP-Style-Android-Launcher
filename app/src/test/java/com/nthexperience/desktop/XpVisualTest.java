@@ -38,6 +38,7 @@ public class XpVisualTest {
                 menu.hide();activity.open("@computer");layout(root);VistaExplorer explorer=(VistaExplorer)find(root,VistaExplorer.class);assertNotNull(explorer);assertTrue(explorer.content.getChildAt(0).getHeight()>0);save(root,new File(output,"explorer-"+scheme+suffix+".png"));
                 activity.open("setting:page:personalization");layout(root);save(root,new File(output,"display-"+scheme+suffix+".png"));
                 View desktop=findDescription(root,"Display tab: Desktop");assertNotNull(desktop);desktop.performClick();layout(root);save(root,new File(output,"desktop-"+scheme+suffix+".png"));
+                activity.open("@notes");layout(root);assertNotNull(find(root,XpNotepad.class));save(root,new File(output,"notepad-"+scheme+suffix+".png"));
             }
         }
     }

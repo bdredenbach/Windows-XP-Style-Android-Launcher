@@ -55,3 +55,20 @@ The 0.7.0 battery, network and media icons are original Canvas paths. Profile pi
 The 0.9.0 individual gadget faces and Compass/Tile Puzzle caption icons are original Android Canvas artwork. The added Network Meter and game category were inspired by gadget categories in the reference galleries, without importing their artwork or code. Compass uses Android SensorManager; network readings use TrafficStats. No new bitmap assets or permissions are required.
 
 The Explorer Cut, Copy, Paste and Delete menu icons are original native Canvas artwork in `AeroIcon.java`; no Windows icon files were imported.
+
+## XP visual controls and fonts (0.3.0)
+
+Caption controls use MIT-licensed XP.css source artwork by Adam Hammad and Jordan
+Scales, revision 376f42eb274361939eaad3b0943204c053ad26c4. Original SVGs, license and
+conversion provenance are in third_party/xp-css; the app uses 3x PNG rasterizations.
+Other scheme controls, the Nth Start mark, XP navigation signs and other control
+surfaces are native Android drawing code.
+
+UI text uses Wine Tahoma regular/bold, LGPL 2.1 or later, from Debian fonts-wine
+8.0~repack-4. This is Wine's independent replacement, not Microsoft's proprietary
+font. Corresponding Wine 8.0 SFD sources, notices, license and substitution/build
+instructions are in third_party/wine-tahoma. Both third-party notices are also
+bundled under assets/notices inside the APK.
+
+Microsoft's archived XP visual guidelines and GUIdebook captures were consulted
+as visual references. Their screenshots and documentation are not bundled.

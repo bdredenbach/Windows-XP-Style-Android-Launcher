@@ -62,7 +62,7 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         this.center = center;
         ink = center ? 0xffecfaff : Aero.INK;
         setOrientation(VERTICAL);
-        setPadding(dp(center ? 16 : 8), dp(6), dp(center ? 16 : 8), dp(6));
+        setPadding(dp(center ? 16 : 0), dp(center?6:0), dp(center ? 16 : 0), dp(center?6:0));
         if (center) setAccessibilityPaneTitle(MediaLibrary.CENTER_TITLE);
 
         LinearLayout heading = new LinearLayout(context);
@@ -75,6 +75,7 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         heading.addView(button("Add files", host::addFiles), new LayoutParams(dp(86), dp(42)));
         if (center) heading.addView(button("Close", host::closeCenter), new LayoutParams(dp(72), dp(42)));
         addView(heading);
+        if(!center){heading.setVisibility(GONE);LinearLayout menuBar=new LinearLayout(context);menuBar.setBackgroundColor(XpTheme.surface(context));for(String name:new String[]{"File","View","Play","Tools","Help"}){TextView item=Aero.text(context,name,11,Color.BLACK);item.setPadding(dp(7),0,dp(7),0);item.setFocusable(true);item.setBackground(XpControls.menuSelection(context));item.setTextColor(XpControls.menuInk(Color.BLACK));item.setContentDescription("Media Player "+name+" menu");item.setOnClickListener(v->classicMenu(item,name));menuBar.addView(item,new LayoutParams(-2,dp(27)));}addView(menuBar);}
 
         LinearLayout tabs = new LinearLayout(context);
         if (center) {
@@ -84,7 +85,8 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         addView(tabs);
 
         body = new FrameLayout(context);
-        addView(body, new LayoutParams(-1, 0, 1));
+        if(center)addView(body, new LayoutParams(-1, 0, 1));
+        else{removeView(tabs);tabs.setOrientation(VERTICAL);tabs.setPadding(dp(4),dp(12),dp(4),dp(4));tabs.setBackground(Aero.gloss(context,new int[]{0xff5c73c6,0xff233d85,0xff152b68},0,0));for(int i=0;i<tabs.getChildCount();i++)tabs.getChildAt(i).setLayoutParams(new LayoutParams(-1,dp(48)));LinearLayout area=new LinearLayout(context);area.addView(tabs,new LayoutParams(dp(104),-1));area.addView(body,new LayoutParams(0,-1,1));addView(area,new LayoutParams(-1,0,1));}
         now = Aero.column(context);
         title = label("Nothing playing", center ? 19 : 15);
         title.setTextColor(0xffe5f6ff);
@@ -125,7 +127,7 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         timeline.addView(seek, new LayoutParams(0, dp(33), 1));
         time = label("0:00 / 0:00", 11);
         time.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-        time.setTextColor(0xffd9eaff);
+        time.setTextColor(center?0xffd9eaff:0xff10295b);
         time.setPadding(0, 0, dp(5), 0);
         timeline.addView(time, new LayoutParams(dp(102), dp(33)));
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -142,7 +144,7 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         LinearLayout deck = Aero.column(context);
         deck.setBackground(Aero.gloss(context, center
                 ? new int[]{0xff19395b, 0xff112943, 0xff0b1e37}
-                : new int[]{0xff243950, 0xff101e32, 0xff091321}, 5, 0xff496786));
+                : new int[]{0xffc9d2f1, 0xff899ecf, 0xffbac9ed}, 5, 0xff496786));
         deck.addView(timeline);
         LinearLayout controls = new LinearLayout(context);
         controls.setGravity(Gravity.CENTER);
@@ -171,6 +173,13 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         updatePlayback();
     }
 
+    private void classicMenu(View anchor,String name){DesktopContextMenu menu=new DesktopContextMenu(getContext(),"Media Player "+name+" menu");switch(name){
+        case "File":menu.item("Open…","files",host::addFiles);menu.item("Add to Media Library…","music",host::addFiles);break;
+        case "View":menu.item("Now Playing","mediaplayer",this::showNow);menu.item("Media Library","music",()->show("Library"));menu.item("Now Playing List","files",()->show("Queue"));menu.item("Media Center","mediacenter",()->host.switchView(true));break;
+        case "Play":menu.item("Play / Pause","mediaplayer",playback::playPause);menu.item("Stop","empty",()->{playback.player.pause();playback.player.seekTo(0);});menu.item("Previous","empty",()->playback.select(playback.player.getCurrentMediaItemIndex()-1));menu.item("Next","empty",()->playback.select(playback.player.getCurrentMediaItemIndex()+1));break;
+        case "Tools":menu.item("Volume…","sound",this::volume);break;
+        default:menu.item("About Nth Media Player","mediaplayer",()->Aero.dialog(getContext()).setTitle("Nth Media Player").setMessage("Nth Desktop XP media library and player. Select local music or video files with File > Open.").setPositiveButton("OK",null).show());
+        }ContextMenus.centered(anchor,(x,y)->ContextMenus.show(menu,anchor,x,y));}
     private int dp(int n) { return Aero.dp(getContext(), n); }
     private TextView label(String text, int size) {
         TextView view = Aero.text(getContext(), text, size, ink);
@@ -205,16 +214,16 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         if (center && name.equals("Now Playing")) {
             ((LayoutParams) tab.getLayoutParams()).weight = 1.7f;
         }
+        if(!center){tab.setText(name.equals("Library")?"Media Library":name.equals("Queue")?"Now Playing List":name);tab.setTextSize(11);tab.setSingleLine(false);tab.setMaxLines(2);}
         navigation.put(name, tab);
     }
     private void appearance() {
         Context context = getContext();
         boolean playing = page.equals("Now Playing");
-        boolean dark = center || playing;
+        boolean dark = center;
         setBackground(Aero.gloss(context, center
                 ? new int[]{0xff06152f, 0xff12396a, 0xff236d9d, 0xff10264e}
-                : playing ? new int[]{0xff060d18, 0xff0e2135, 0xff070d17}
-                : new int[]{0xfff9fdff, 0xffe9f3fb, 0xffdceaf7}, 0, 0));
+                : new int[]{0xffd8def1,0xffa0b1db,0xffbac7e6}, 0, 0));
         brand.setText(center ? MediaLibrary.CENTER_TITLE : playing ? "Now Playing" : "Media Library");
         brand.setTextColor(dark ? 0xffeff9ff : 0xff264768);
         state.setTextColor(dark ? 0xffb7dbf2 : 0xff355874);
@@ -224,8 +233,8 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
             boolean selected = item.getKey().equals(page);
             TextView tab = item.getValue();
             tab.setSelected(selected);
-            tab.setTextColor(dark ? 0xffedf9ff : 0xff284763);
-            tab.setBackground(navigationSurface(dark, selected));
+            tab.setTextColor(0xffedf9ff);
+            tab.setBackground(navigationSurface(true, selected));
         }
     }
     private StateListDrawable navigationSurface(boolean dark, boolean selected) {

@@ -28,6 +28,7 @@ public final class XpSmoke extends Instrumentation {
         check(find(root,v->"All Programs".equals(v.getContentDescription()))!=null,"All Programs reachable");shot("01-start-blue");
         View app=find(root,v->"Open Programs: Notepad".equals(v.getContentDescription()));check(app!=null,"Pinned Notepad exists");tap(app);settle();
         check(window("@notes")!=null,"Real program row tap opens Notepad");
+        check(find(root,v->"Notepad File menu".equals(v.getContentDescription()))!=null,"XP Notepad menus present");shot("07-notepad");
         ui(()->home.open("@computer"));settle();check(find(root,v->"Navigation: My Documents".equals(v.getContentDescription()))!=null,"Explorer XP tasks reachable");shot("02-explorer-blue");
         ui(()->home.open("setting:page:personalization"));settle();check(find(root,v->"XP theme".equals(v.getContentDescription()))!=null,"Display Properties offers XP schemes");shot("03-display-properties");
         for(String name:XpDisplayProperties.TABS)check(find(root,v->("Display tab: "+name).equals(v.getContentDescription()))!=null,"Display tab exists: "+name);
@@ -46,6 +47,9 @@ public final class XpSmoke extends Instrumentation {
         ui(()->find(root,v->"Navigation folders".equals(v.getContentDescription())).performClick());settle();check(find(root,v->"XP common tasks".equals(v.getContentDescription()))!=null,"Folders returns to common tasks");
         ui(()->home.open("@taskmanager"));settle();check(find(root,v->"Task Manager Services".equals(v.getContentDescription()))==null,"XP omits later Services tab");
         ui(()->find(root,v->"Task Manager Performance".equals(v.getContentDescription())).performClick());settle();shot("06-taskmanager-performance");
+        ui(()->home.open("@browser"));settle();check(find(root,v->"Internet Explorer File menu".equals(v.getContentDescription()))!=null,"IE classic menu present");check(find(root,v->"Go to address".equals(v.getContentDescription()))!=null,"IE address row present");shot("08-internet-explorer");
+        ui(()->home.open(MediaLibrary.PLAYER));settle();check(find(root,v->"Media Player File menu".equals(v.getContentDescription()))!=null,"XP media player menu present");shot("09-media-player");
+        ui(()->home.open("@control"));settle();shot("10-control-panel");
 
         // A real hold invokes the options route retained from Seven's Start touch fix.
         ui(()->find(root,v->v instanceof XpStartButton).performClick());settle();app=find(root,v->"Open Programs: Notepad".equals(v.getContentDescription()));

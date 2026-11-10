@@ -6,6 +6,11 @@ import android.graphics.*;
 final class XpArtwork {
     static boolean draw(Canvas c,String kind){
         Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
+        if(kind.equals("help")){p.setShader(new RadialGradient(23,19,38,new int[]{0xff84c1ff,0xff2368ca,0xff134a9e},null,Shader.TileMode.CLAMP));c.drawCircle(32,32,25,p);p.setShader(null);p.setTypeface(Typeface.DEFAULT_BOLD);p.setColor(Color.WHITE);p.setTextSize(40);c.drawText("?",20,47,p);return true;}
+        if(kind.equals("printer")){box(c,p,17,5,49,30,0xffffffff,0xffc4c5c8);box(c,p,7,25,57,49,0xffe6e7e5,0xff858f9a);box(c,p,15,37,49,60,0xffffffff,0xffcdd4dc);p.setColor(0xff579338);c.drawCircle(49,31,2,p);p.setColor(0xff929da8);for(int y=44;y<55;y+=4)c.drawRect(21,y,44,y+1,p);return true;}
+        if(kind.equals("control")){box(c,p,6,8,57,55,0xffedf3fb,0xffa6b6ca);p.setColor(0xff2b63b9);c.drawRect(9,11,54,20,p);int[] colors={0xffdf6c42,0xff64a553,0xff5d92ce,0xffd4a640};for(int i=0;i<4;i++){p.setColor(colors[i]);c.drawRoundRect(14+(i%2)*20,25+(i/2)*13,26+(i%2)*20,34+(i/2)*13,2,2,p);}return true;}
+        if(kind.equals("mail")){box(c,p,7,16,57,50,0xffffffff,0xffc6d1dc);p.setColor(0xff69849b);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);c.drawLine(8,17,32,36,p);c.drawLine(32,36,56,17,p);c.drawLine(8,49,25,34,p);c.drawLine(39,34,56,49,p);return true;}
+        if(kind.equals("showdesktop")){box(c,p,6,10,55,53,0xffeff7fe,0xff7b96b5);box(c,p,10,16,51,45,0xff5292cb,0xff2461a2);p.setColor(0xff84b855);c.drawRect(10,35,51,45,p);p.setColor(0xff316ac5);c.drawRect(8,10,53,17,p);return true;}
         if(kind.equals("computer")){
             box(c,p,43,13,58,52,0xfff2f0e8,0xff9c9b95);p.setColor(0xff64758a);c.drawRect(47,19,54,22,p);c.drawRect(47,26,54,28,p);p.setColor(0xff54b244);c.drawCircle(51,46,2,p);
             box(c,p,5,10,44,43,0xfff7f5ed,0xff8d929a);box(c,p,9,14,40,36,0xff344866,0xff121d37);

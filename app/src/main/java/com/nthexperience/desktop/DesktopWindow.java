@@ -69,24 +69,24 @@ final class DesktopWindow extends LinearLayout {
         snapOutline.setStroke(Aero.dp(context,2),0xffb6e8ff);
         setOrientation(VERTICAL); setElevation(Aero.dp(context,16));
         glass=new AeroGlass(wallpaper,AeroGlass.WINDOW);setBackground(glass);
-        setPadding(Aero.dp(context,6),Aero.dp(context,2),Aero.dp(context,6),Aero.dp(context,6));
+        setPadding(Aero.dp(context,3),Aero.dp(context,2),Aero.dp(context,3),Aero.dp(context,3));
         LinearLayout bar=new LinearLayout(context); bar.setGravity(Gravity.CENTER_VERTICAL);
-        String icon=FolderLinks.id(toolId)||toolId.startsWith("@explorer:")?"files":toolId.equals("@recycle")?"recycle":toolId.equals("@taskmanager")?"taskmanager":toolId.equals("@welcome")?"orb":(toolId.startsWith("folder:")||toolId.startsWith("@organizer:"))?"folderapps":toolId.equals("@backup")?"drive":toolId.equals("@organize")||toolId.equals("@quicklaunch")?"folderapps":toolId.equals("@control")?"control":toolId.equals("@appearance")?"appearance":toolId.equals("@files")?"files":toolId.equals("@filemanagers")?"folderapps":toolId.equals("@computer")||toolId.equals("@system")?"computer":toolId.equals("@notes")?"notes":toolId.equals("@photos")?"pictures":toolId.equals(MediaLibrary.PLAYER)?"mediaplayer":toolId.equals("@browser")?"browser":GadgetCatalog.toolIcon(toolId);LinearLayout.LayoutParams iconParams=new LinearLayout.LayoutParams(Aero.dp(context,32),Aero.dp(context,32));iconParams.leftMargin=Aero.dp(context,1);bar.addView(new AeroIcon(context,icon),iconParams);
-        TextView label=Aero.text(context,title,14,XpTheme.titleInk(context));titleLabel=label;Aero.bold(label);label.setSingleLine();label.setEllipsize(android.text.TextUtils.TruncateAt.END);label.setLayerType(View.LAYER_TYPE_SOFTWARE,null);label.setShadowLayer(0,0,0,0); label.setPadding(Aero.dp(context,8),0,0,0);
-        bar.addView(label,new LayoutParams(0,Aero.dp(context,48),1));
+        String icon=FolderLinks.id(toolId)||toolId.startsWith("@explorer:")?"files":toolId.equals("@recycle")?"recycle":toolId.equals("@taskmanager")?"taskmanager":toolId.equals("@welcome")?"orb":(toolId.startsWith("folder:")||toolId.startsWith("@organizer:"))?"folderapps":toolId.equals("@backup")?"drive":toolId.equals("@organize")||toolId.equals("@quicklaunch")?"folderapps":toolId.equals("@control")?"control":toolId.equals("@appearance")?"appearance":toolId.equals("@files")?"files":toolId.equals("@filemanagers")?"folderapps":toolId.equals("@computer")||toolId.equals("@system")?"computer":toolId.equals("@notes")?"notes":toolId.equals("@photos")?"pictures":toolId.equals(MediaLibrary.PLAYER)?"mediaplayer":toolId.equals("@browser")?"browser":GadgetCatalog.toolIcon(toolId);LinearLayout.LayoutParams iconParams=new LinearLayout.LayoutParams(Aero.dp(context,23),Aero.dp(context,23));iconParams.leftMargin=Aero.dp(context,1);bar.addView(new AeroIcon(context,icon),iconParams);
+        TextView label=Aero.text(context,title,14,XpTheme.titleInk(context));titleLabel=label;Aero.bold(label);label.setSingleLine();label.setEllipsize(android.text.TextUtils.TruncateAt.END);label.setLayerType(View.LAYER_TYPE_SOFTWARE,null);label.setShadowLayer(0,0,0,0); label.setPadding(Aero.dp(context,4),0,0,0);
+        bar.addView(label,new LayoutParams(0,Aero.dp(context,XpMetrics.CAPTION),1));
         TextView minimize=chrome("—",this::minimize);minimizeButton=minimize;
         maximizeButton=chrome("□",this::toggleMaximize);
         TextView close=chrome("×",this::closeWindow);closeButton=close;
         close.setTextColor(Color.WHITE);
         bar.addView(minimize); bar.addView(maximizeButton); bar.addView(close);
-        addView(bar,new LayoutParams(-1,Aero.dp(context,48)));
+        addView(bar,new LayoutParams(-1,Aero.dp(context,XpMetrics.CAPTION)));
         body.setBackgroundColor(XpTheme.surface(context)); addView(body,new LayoutParams(-1,0,1));
         bindCaptionIcon(bar.getChildAt(0));
         bar.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{
             boolean narrow=r-l<Aero.dp(context,225);
-            for(View button:new View[]{minimizeButton,maximizeButton,closeButton})captionWidth(button,narrow?32:44);
-            captionWidth(bar.getChildAt(0),narrow?24:32);
-            label.setPadding(Aero.dp(context,narrow?3:8),0,0,0);
+            for(View button:new View[]{minimizeButton,maximizeButton,closeButton})captionWidth(button,narrow?28:32);
+            captionWidth(bar.getChildAt(0),narrow?20:23);
+            label.setPadding(Aero.dp(context,narrow?3:4),0,0,0);
         });
         GestureDetector captionGestures=new GestureDetector(context,new GestureDetector.SimpleOnGestureListener(){
             @Override public boolean onDown(MotionEvent e){return true;}
@@ -129,7 +129,7 @@ final class DesktopWindow extends LinearLayout {
         });
         label.setContentDescription(title+". Drag to move window.");
     }
-    private void bindCaptionIcon(View icon){icon.setPadding(Aero.dp(getContext(),6),Aero.dp(getContext(),6),Aero.dp(getContext(),6),Aero.dp(getContext(),6));icon.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);icon.setContentDescription("Window menu");icon.setFocusable(true);icon.setOnClickListener(v->ContextMenus.centered(icon,(x,y)->showSystemMenu(icon,x,y)));ContextMenus.bind(icon,(x,y)->showSystemMenu(icon,x,y));}
+    private void bindCaptionIcon(View icon){icon.setPadding(Aero.dp(getContext(),3),Aero.dp(getContext(),3),Aero.dp(getContext(),3),Aero.dp(getContext(),3));icon.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);icon.setContentDescription("Window menu");icon.setFocusable(true);icon.setOnClickListener(v->ContextMenus.centered(icon,(x,y)->showSystemMenu(icon,x,y)));ContextMenus.bind(icon,(x,y)->showSystemMenu(icon,x,y));}
     boolean captionIcon(String kind){if(captionKind.equals(kind))return false;captionKind=kind;ViewGroup chrome=(ViewGroup)getChildAt(0);View old=chrome.getChildAt(0);ViewGroup.LayoutParams params=old.getLayoutParams();chrome.removeViewAt(0);View icon=new AeroIcon(getContext(),kind);bindCaptionIcon(icon);chrome.addView(icon,0,params);return true;}
     private void captionWidth(View view,int dp){
         ViewGroup.LayoutParams size=view.getLayoutParams();
@@ -150,7 +150,7 @@ final class DesktopWindow extends LinearLayout {
     private boolean fitted(){return effectivePlacement()!=Placement.FLOATING;}
     void maximize(){if(!maximized())place(Placement.MAXIMIZED);restore();}
     void restoreDown(){settle();setVisibility(VISIBLE);bringToFront();place(Placement.FLOATING);}
-    void closeWindow(){if(getParent()==null)return;dismissSystemMenu();settle();hideKeyboard();if(body instanceof VistaShell)((VistaShell)body).close();if(body instanceof WeatherPanel)((WeatherPanel)body).close();if(body instanceof BrowserPanel)((BrowserPanel)body).close();if(body instanceof PhotoGallery)((PhotoGallery)body).close();if(body instanceof TaskManagerPanel)((TaskManagerPanel)body).close();if(body instanceof RecyclePanel)((RecyclePanel)body).close();host.removeView(this);changed.run();}
+    void closeWindow(){if(getParent()==null)return;dismissSystemMenu();settle();hideKeyboard();if(body instanceof XpNotepad)((XpNotepad)body).close();if(body instanceof VistaShell)((VistaShell)body).close();if(body instanceof WeatherPanel)((WeatherPanel)body).close();if(body instanceof BrowserPanel)((BrowserPanel)body).close();if(body instanceof PhotoGallery)((PhotoGallery)body).close();if(body instanceof TaskManagerPanel)((TaskManagerPanel)body).close();if(body instanceof RecyclePanel)((RecyclePanel)body).close();host.removeView(this);changed.run();}
     void showSystemMenu(View anchor,float x,float y){dismissSystemMenu();systemMenu=new DesktopContextMenu(getContext(),"Window commands");systemMenu.item("Restore","empty",fitted()||getVisibility()!=VISIBLE||minimizing,()->{if(getVisibility()!=VISIBLE||minimizing)restore();else if(fitted())restoreDown();});systemMenu.item("Minimize","empty",getVisibility()==VISIBLE&&!minimizing,this::minimize);systemMenu.item("Maximize","empty",!maximized(),this::maximize);systemMenu.item("Snap left","empty",canSplit(),()->{restore();snap(Placement.LEFT);});
         systemMenu.item("Snap right","empty",canSplit(),()->{restore();snap(Placement.RIGHT);});
         systemMenu.item("Minimize or restore other windows","empty",shake);
@@ -222,7 +222,7 @@ final class DesktopWindow extends LinearLayout {
         float bottom=getHeight()-edge;
         for(int size=4;size<=10;size+=3){
             float length=size*density;
-            canvas.drawLine(edge,bottom-length,edge+length,bottom,gripPaint);
+
             float right=getWidth()-edge;
             canvas.drawLine(right-length,bottom,right,bottom-length,gripPaint);
         }
@@ -303,7 +303,7 @@ final class DesktopWindow extends LinearLayout {
     }
     private TextView chrome(String symbol,Runnable action){
         TextView view=new WindowButton(getContext(),symbol,action);
-        view.setTextSize(16);view.setMinHeight(0);view.setPadding(0,0,0,0);LayoutParams lp=new LayoutParams(Aero.dp(getContext(),44),Aero.dp(getContext(),44));lp.leftMargin=Aero.dp(getContext(),1);view.setLayoutParams(lp);
+        view.setTextSize(16);view.setMinHeight(0);view.setPadding(0,0,0,0);LayoutParams lp=new LayoutParams(Aero.dp(getContext(),32),Aero.dp(getContext(),32));lp.leftMargin=Aero.dp(getContext(),1);view.setLayoutParams(lp);
         view.setContentDescription(symbol.equals("×")?"Close window":symbol.equals("—")?"Minimize window":"Maximize or restore window");
         return view;
     }

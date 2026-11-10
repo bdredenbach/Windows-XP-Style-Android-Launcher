@@ -120,7 +120,7 @@ final class TaskbarReorder {
         int[] at=new int[2];items.getLocationOnScreen(at);float localX=rawX-at[0],localY=rawY-at[1];
         int x=active.source.getLeft(),y=0,rowHeight=items.getHeight();
         if(expanded()){
-            TaskbarItems rows=(TaskbarItems)items;int row=rows.rowAt(localY);rowHeight=Aero.dp(items.getContext(),48);y=row*rowHeight;x=rows.rowStart(row);
+            TaskbarItems rows=(TaskbarItems)items;int row=rows.rowAt(localY);rowHeight=Aero.dp(items.getContext(),XpMetrics.ROW);y=row*rowHeight;x=rows.rowStart(row);
             for(int i=0;i<items.getChildCount();i++){View child=items.getChildAt(i);String id=key(child);if(id==null||id.equals(active.id)||TaskbarItems.row(child)!=row)continue;if(localX<child.getLeft()+child.getWidth()/2f){x=child.getLeft();break;}x=child.getRight();}
             x=Math.max(rows.rowStart(row),Math.min(rows.rowEnd(row),x));
         }else{

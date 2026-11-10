@@ -131,7 +131,7 @@ final class DesktopStore {
     int spacingX(){return Math.max(0,Math.min(24,prefs.getInt("desktop_spacing_x",0)));}
     int spacingY(){return Math.max(0,Math.min(24,prefs.getInt("desktop_spacing_y",0)));}
     int tileWidth(){return iconSize()+34+spacingX();}
-    int tileHeight(){return iconSize()+(iconLabels()?48:24)+spacingY();}
+    int tileHeight(){return iconSize()+(iconLabels()?40:24)+spacingY();}
     int gridColumns(String orientation){return Math.max(0,Math.min(10,prefs.getInt("desktop_columns_"+orientation,0)));}
     int gridRows(String orientation){return Math.max(0,Math.min(16,prefs.getInt("desktop_rows_"+orientation,0)));}
     static String cleanName(String name){String value=name==null?"":name.replaceAll("[\\p{Cntrl}]"," ").trim();return value.substring(0,Math.min(40,value.length()));}

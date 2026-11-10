@@ -1,9 +1,29 @@
 # Nth Desktop XP
 
-An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.2.0**.
+An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.3.0**.
 
 Android 8.0 or newer. Target SDK 36. Application ID: `com.nthexperience.desktop.xp`.
 It installs alongside Vista, Seven, Eight, Ten and Eleven.
+
+## XP visual pass — 0.3.0
+
+The shared shell now uses tighter Luna title bars, original XP.css caption artwork,
+Wine's Tahoma-compatible UI fonts, XP control states and classic blue menu highlights.
+The taskbar is slimmer, its clock is one line, the notification area is lighter,
+and Show Desktop sits beside Quick Launch. The two app rows still scroll and accept
+reordering independently. Explicit icon size choices are retained; the default is 36dp.
+
+Start has compact destinations, Internet/E-mail slots, and colored Log Off / Turn Off
+signs. Explorer uses green navigation arrows, a separate Address line and a Search
+control. Notepad has its five menus, plain editor, cursor status, Find, Word Wrap,
+font sizes and real document Open/Save/Save As. The browser gains IE6-style chrome;
+its optional tab strip appears when more than one tab is open. Media Player gets a
+blue XP-era navigation rail and menus. Control Panel and the picture viewer also
+receive the shared typography and surface treatment.
+
+This remains an Android launcher. WebView, file permissions and device settings
+continue to be managed by Android. References, asset notices and design tradeoffs
+are recorded in `docs/XP_0_3_VISUAL_PASS.md` and `ASSETS.md`.
 
 ## XP training-guide fidelity pass
 

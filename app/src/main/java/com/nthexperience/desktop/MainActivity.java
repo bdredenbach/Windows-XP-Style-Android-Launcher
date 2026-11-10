@@ -175,7 +175,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             desktop.configure(dp(store.tileWidth()),dp(store.tileHeight()),holes);
             int iconHeight=Math.max(1,height-desktopScroll.getPaddingTop()-desktopScroll.getPaddingBottom());
             // Fit complete rows to the visible work area without rewriting saved positions.
-            int gridHeight=Math.max(1,shell.getHeight()-shell.getPaddingTop()-shell.getPaddingBottom()-dp(54)-desktopScroll.getPaddingTop()-desktopScroll.getPaddingBottom());
+            int gridHeight=Math.max(1,shell.getHeight()-shell.getPaddingTop()-shell.getPaddingBottom()-dp(XpMetrics.TASKBAR)-desktopScroll.getPaddingTop()-desktopScroll.getPaddingBottom());
             desktop.viewport(iconHeight,gridHeight);
             FrameLayout.LayoutParams gadgetParams=(FrameLayout.LayoutParams)sidebar.getLayoutParams();
             if(gadgetParams.topMargin!=windowTopInset){gadgetParams.topMargin=windowTopInset;sidebar.setLayoutParams(gadgetParams);}
@@ -184,8 +184,8 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             if (startMenu != null) {
                 boolean portrait = getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT;
                 int available = Math.max(1, height - windowTopInset - dp(8));
-                int menuHeight = Math.min(dp(portrait ? 680 : 540), available);
-                int menuWidth = Math.min(dp(420), Math.max(1, width - dp(12)));
+                int menuHeight = Math.min(dp(portrait ? 536 : 498), available);
+                int menuWidth = Math.min(dp(396), Math.max(1, width - dp(8)));
                 FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) startMenu.getLayoutParams();
                 if (params.height != menuHeight || params.width != menuWidth) {
                     params.height = menuHeight;
@@ -197,8 +197,8 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     private void buildTaskbar(){
         shell.setClipChildren(false);shell.setClipToPadding(false);
         LinearLayout taskbar=new LinearLayout(this);taskbarView=taskbar;taskbar.setContentDescription("Desktop taskbar");taskbar.setGravity(Gravity.CENTER_VERTICAL);taskbar.setClipChildren(false);taskbar.setPadding(dp(3),0,dp(3),0);taskbar.setBackground(new AeroGlass(wallpaper,AeroGlass.TASKBAR));taskbar.setElevation(dp(5));
-        XpStartButton orb=new XpStartButton(this);orb.setContentDescription("Start menu");orb.setFocusable(true);orb.setOnClickListener(v->{if(startMenu.getVisibility()==View.VISIBLE)startMenu.hide();else showStart(false);});ContextMenus.bind(orb,(x,y)->startOrbMenu(orb,x,y));taskbar.addView(orb,new LinearLayout.LayoutParams(dp(96),dp(48)));
-        View grip=new TaskbarSeparator(this);grip.setContentDescription("Taskbar commands");grip.setTooltipText("Hold for taskbar commands");taskbar.addView(grip,new LinearLayout.LayoutParams(dp(12),dp(48)));ContextMenus.bind(grip,(x,y)->taskbarMenu(grip,x,y));
+        XpStartButton orb=new XpStartButton(this);orb.setContentDescription("Start menu");orb.setFocusable(true);orb.setOnClickListener(v->{if(startMenu.getVisibility()==View.VISIBLE)startMenu.hide();else showStart(false);});ContextMenus.bind(orb,(x,y)->startOrbMenu(orb,x,y));taskbar.addView(orb,new LinearLayout.LayoutParams(dp(92),dp(XpMetrics.ROW)));
+        View grip=new TaskbarSeparator(this);grip.setContentDescription("Taskbar commands");grip.setTooltipText("Hold for taskbar commands");taskbar.addView(grip,new LinearLayout.LayoutParams(dp(12),dp(XpMetrics.ROW)));ContextMenus.bind(grip,(x,y)->taskbarMenu(grip,x,y));
         HorizontalScrollView strip=new HorizontalScrollView(this){
             private float downX,downY;
             @Override public boolean onInterceptTouchEvent(MotionEvent event){
@@ -221,15 +221,15 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                 }
                 return super.dispatchTouchEvent(event);
             }
-        };taskClip.setClipChildren(true);taskClip.addView(strip,new FrameLayout.LayoutParams(-1,-1));taskbar.addView(taskClip,new LinearLayout.LayoutParams(0,dp(48),1));
+        };taskClip.setClipChildren(true);taskClip.addView(strip,new FrameLayout.LayoutParams(-1,-1));taskbar.addView(taskClip,new LinearLayout.LayoutParams(0,dp(XpMetrics.ROW),1));
         for(View surface:new View[]{taskbar,taskClip,strip,taskItems})ContextMenus.bind(surface,(x,y)->taskbarMenu(surface,x,y));
         taskbarReorder=new TaskbarReorder(taskItems,strip,order->{
             if(order!=null){List<String> pins=TaskbarOrder.apply(store.quickLaunch(),order);store.quickLaunch(pins);store.taskbarOrder(order);visibleTaskOrder.clear();visibleTaskOrder.addAll(order);}
             renderTaskbar();
         });
-        tray=new SystemTray(this,workspace,wallpaper,new SystemTray.Host(){public void action(String id){vistaAction(id);}public void open(String id){MainActivity.this.open(id);}public void layout(){main.post(()->{layoutWorkspace();renderTaskbar();});}public void opening(){if(previews!=null)previews.dismiss();startMenu.hide();((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(root.getWindowToken(),0);}});taskbar.addView(tray,new LinearLayout.LayoutParams(-2,dp(48)));
-        clock=Aero.text(this,"",10,XpTheme.taskbarInk(this));clock.setGravity(Gravity.CENTER);clock.setMaxLines(2);clock.setIncludeFontPadding(false);clock.setPadding(dp(5),0,dp(5),0);clock.setMinWidth(dp(55));clock.setOnClickListener(v->tray.show("calendar"));clock.setContentDescription("Clock and calendar");taskbar.addView(clock,new LinearLayout.LayoutParams(-2,dp(44)));
-        FrameLayout peek=new FrameLayout(this);desktopToggle=peek;View peekStrip=new View(this);peekStrip.setBackground(Aero.gloss(this,new int[]{0x668eaec0,0x554c697f,0x66314353},0,0x667f98ab));peek.addView(peekStrip,new FrameLayout.LayoutParams(dp(12),-1,Gravity.END));peek.setContentDescription("Show desktop");peek.setOnClickListener(v->{previews.dismiss();showDesktop();});ContextMenus.bind(peek,(x,y)->taskbarMenu(peek,x,y));previews.bindDesktopPeek(peek);taskbar.addView(peek,new LinearLayout.LayoutParams(dp(32),dp(44)));shell.addView(taskbar,new LinearLayout.LayoutParams(-1,dp(54)));taskbar.getViewTreeObserver().addOnPreDrawListener(()->{syncTaskbarBounds();return true;});applyTaskbarRows();renderTaskbar();
+        tray=new SystemTray(this,workspace,wallpaper,new SystemTray.Host(){public void action(String id){vistaAction(id);}public void open(String id){MainActivity.this.open(id);}public void layout(){main.post(()->{layoutWorkspace();renderTaskbar();});}public void opening(){if(previews!=null)previews.dismiss();startMenu.hide();((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(root.getWindowToken(),0);}});taskbar.addView(tray,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
+        clock=Aero.text(this,"",11,XpTheme.taskbarInk(this));clock.setGravity(Gravity.CENTER);clock.setSingleLine(true);clock.setIncludeFontPadding(false);clock.setPadding(dp(5),0,dp(5),0);clock.setMinWidth(dp(62));clock.setBackground(XpControls.notification(this,false));tray.setBackground(XpControls.notification(this,true));clock.setOnClickListener(v->tray.show("calendar"));clock.setContentDescription("Clock and calendar");taskbar.addView(clock,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
+        FrameLayout peek=new FrameLayout(this);desktopToggle=peek;View peekStrip=new AeroIcon(this,"showdesktop");peek.addView(peekStrip,new FrameLayout.LayoutParams(dp(22),dp(22),Gravity.CENTER));peek.setContentDescription("Show desktop");peek.setOnClickListener(v->{previews.dismiss();showDesktop();});ContextMenus.bind(peek,(x,y)->taskbarMenu(peek,x,y));previews.bindDesktopPeek(peek);taskbar.addView(peek,2,new LinearLayout.LayoutParams(dp(28),dp(XpMetrics.ROW)));shell.addView(taskbar,new LinearLayout.LayoutParams(-1,dp(XpMetrics.TASKBAR)));taskbar.getViewTreeObserver().addOnPreDrawListener(()->{syncTaskbarBounds();return true;});applyTaskbarRows();renderTaskbar();
     }
     private void applyTaskbarRows(){
         if(taskbarView==null)return;
@@ -237,13 +237,13 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         if(taskbarReorder!=null)taskbarReorder.cancel();
         ((TaskbarItems)taskItems).expanded(expanded);
         if(expanded&&taskStrip.getScrollX()!=0)taskStrip.scrollTo(0,0);
-        int height=dp(expanded?102:54),itemsHeight=dp(expanded?96:48);
+        int height=dp(expanded?XpMetrics.TASKBAR+XpMetrics.ROW:XpMetrics.TASKBAR),itemsHeight=dp(expanded?2*XpMetrics.ROW:XpMetrics.ROW);
         ViewGroup.LayoutParams outer=taskbarView.getLayoutParams();if(outer.height!=height){outer.height=height;taskbarView.setLayoutParams(outer);}
         ViewGroup.LayoutParams clip=taskClip.getLayoutParams();if(clip.height!=itemsHeight){clip.height=itemsHeight;taskClip.setLayoutParams(clip);}
         // Keep shell controls centered in the original bottom row, independently of the app rows.
         for(int i=0;i<taskbarView.getChildCount();i++){
             View child=taskbarView.getChildAt(i);LinearLayout.LayoutParams position=(LinearLayout.LayoutParams)child.getLayoutParams();
-            int anchorHeight=child==taskClip?height:dp(54);
+            int anchorHeight=child==taskClip?height:dp(XpMetrics.TASKBAR);
             int bottom=Math.max(0,(anchorHeight-position.height+1)/2);
             if(position.gravity!=Gravity.BOTTOM||position.bottomMargin!=bottom){position.gravity=Gravity.BOTTOM;position.bottomMargin=bottom;child.setLayoutParams(position);}
         }
@@ -370,7 +370,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             else ContextMenus.bind(button,commands);
             if(!grouped)button.setOnClickListener(v->{previews.dismiss();startMenu.hide();tray.dismiss();if(target.getVisibility()==View.VISIBLE&&!target.minimizing()&&target.active())target.minimize();else target.restore();});
             previews.bindTask(button,members,mousePreviews,()->ContextMenus.centered(button,commands));
-            LinearLayout.LayoutParams size=new LinearLayout.LayoutParams(showLabels&&grouped?dp(112):buttonWidth,dp(48));
+            LinearLayout.LayoutParams size=new LinearLayout.LayoutParams(showLabels&&grouped?dp(112):buttonWidth,dp(XpMetrics.ROW));
             size.rightMargin=gap;
             button.setLayoutParams(size);TaskbarItems.slot(button,true);
             familyInPinnedSlot|=pinnedExplorerFamily;
@@ -392,7 +392,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             };
             ContextMenus.bindJumpList(button,(x,y)->showJumpList(button,id,x,y));
             previews.bindApp(button,title,true,mousePreviews,()->open(id),()->ContextMenus.centered(button,commands));
-            LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(buttonWidth,dp(48));
+            LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(buttonWidth,dp(XpMetrics.ROW));
             lp.rightMargin=gap;button.setLayoutParams(lp);TaskbarItems.slot(button,true);taskbarButton(button,id,id);buttons.put(id,button);
         }
         for(String id:pins){
@@ -409,7 +409,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                 if(hasJumpList(id))ContextMenus.bindJumpList(pinned,(x,y)->showJumpList(pinned,id,x,y));
                 else ContextMenus.bind(pinned,commands);
                 previews.bindApp(pinned,label(id),false,false,()->open(id),()->ContextMenus.centered(pinned,commands));
-                LinearLayout.LayoutParams size=new LinearLayout.LayoutParams(buttonWidth,dp(48));
+                LinearLayout.LayoutParams size=new LinearLayout.LayoutParams(buttonWidth,dp(XpMetrics.ROW));
                 size.rightMargin=gap;
                 button.setLayoutParams(size);TaskbarItems.slot(button,false);taskbarButton(button,id,id);
             }
@@ -639,7 +639,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             if(hasJumpList(id))ContextMenus.bindJumpList(quick,(x,y)->showJumpList(quick,id,x,y));
             else ContextMenus.bind(quick,commands);
             previews.bindApp(quick,label(id),false,false,()->open(id),()->ContextMenus.centered(quick,commands));
-            taskItems.addView(quick,new LinearLayout.LayoutParams(cell,dp(48)));
+            taskItems.addView(quick,new LinearLayout.LayoutParams(cell,dp(XpMetrics.ROW)));
         }
         if(overflow&&slots>0){
             TextView more=Aero.text(this,"»",19,Color.WHITE);
@@ -650,12 +650,12 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                 for(String id:shortcuts.subList(visible,shortcuts.size()))menu.item(label(id),"programs",()->open(id));
                 ContextMenus.centered(more,(x,y)->ContextMenus.show(menu,more,x,y));
             });
-            taskItems.addView(more,new LinearLayout.LayoutParams(cell,dp(48)));
+            taskItems.addView(more,new LinearLayout.LayoutParams(cell,dp(XpMetrics.ROW)));
         }
         View divider=new TaskbarSeparator(this);
         divider.setContentDescription("Quick Launch separator");
         ContextMenus.bind(divider,(x,y)->taskbarMenu(divider,x,y));
-        taskItems.addView(divider,new LinearLayout.LayoutParams(separator,dp(48)));
+        taskItems.addView(divider,new LinearLayout.LayoutParams(separator,dp(XpMetrics.ROW)));
         return slots*cell+separator;
     }
     private void fitTaskButtons(int first,int room){
@@ -692,7 +692,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         if(showLabel)button.setPadding(dp(6),0,dp(5),0);
         button.setFocusable(true);
         DesktopWindow window=windows.get(id);
-        int side=showLabel?20:32;
+        int side=showLabel?18:24;
         View image=window!=null&&window.body instanceof VistaExplorer&&((VistaExplorer)window.body).page().startsWith("folder:")
                 ?new AeroIcon(this,"files"):icon(id,side);
         button.addView(image,new LinearLayout.LayoutParams(dp(side),dp(side)));
@@ -714,7 +714,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     private String defaultLabel(String id){
         JSONObject location=FolderLinks.get(store,id);if(location!=null)return location.optString("title","Folder");
         if(id.startsWith("@gadget:")&&GadgetCatalog.extra(id.substring(8)))return GadgetCatalog.title(id.substring(8));
-        switch(id){case MediaLibrary.PLAYER:return MediaLibrary.PLAYER_TITLE;case MediaLibrary.CENTER:return MediaLibrary.CENTER_TITLE;case "@recycle":return "Recycle Bin";case "@workspaces":return "Saved Workspaces";case "@recent":return "Recent Items";case "@taskmanager":return "Task Manager";case "@actioncenter":return "Action Center";case "@welcome":return "Welcome Center";case "@organize":return "Desktop Organization";case "@quicklaunch":return "Quick Launch";case "@backup":return "Backup and Restore";case "@control":return "Control Panel";case "@system":return "System";case "@filemanagers":return "File Managers";case "@weather":return "Weather";case "@clock":return "Clock";case "@gadgets":return "Gadget Gallery";case "@sticky":return "Notes";case "@calendar":return "Calendar";case "@computer":return "My Computer";case "@browser":return BrowserPanel.NAME;case "@photos":return "Photo Gallery";case "@files":return "Files";case "@documents":return "My Documents";case "@pictures":return "My Pictures";case "@music":return "My Music";case "@flip3d":return "Flip 3D";case "@notes":return "Notepad";case "@appearance":return "Display Properties";default:AppCatalog.Entry app=entries.get(id);return app==null?"Unavailable app":app.label;}
+        switch(id){case MediaLibrary.PLAYER:return MediaLibrary.PLAYER_TITLE;case MediaLibrary.CENTER:return MediaLibrary.CENTER_TITLE;case "@recycle":return "Recycle Bin";case "@workspaces":return "Saved Workspaces";case "@recent":return "Recent Items";case "@taskmanager":return "Task Manager";case "@actioncenter":return "Action Center";case "@welcome":return "Welcome Center";case "@organize":return "Desktop Organization";case "@quicklaunch":return "Quick Launch";case "@backup":return "Backup and Restore";case "@control":return "Control Panel";case "@system":return "System";case "@filemanagers":return "File Managers";case "@weather":return "Weather";case "@clock":return "Clock";case "@gadgets":return "Gadget Gallery";case "@sticky":return "Notes";case "@calendar":return "Calendar";case "@computer":return "My Computer";case "@browser":return BrowserPanel.NAME;case "@photos":return "Picture and Fax Viewer";case "@files":return "Files";case "@documents":return "My Documents";case "@pictures":return "My Pictures";case "@music":return "My Music";case "@flip3d":return "Flip 3D";case "@notes":return "Notepad";case "@appearance":return "Display Properties";default:AppCatalog.Entry app=entries.get(id);return app==null?"Unavailable app":app.label;}
     }
     @Override public void open(String id){
         if(steps.active()&&recordableDesktop()){
@@ -955,13 +955,30 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         DesktopWindow next=new DesktopWindow(this,workspace,title,body,wallpaper,this::renderTaskbar,store,id,layoutKey);next.safeTop(windowTopInset);next.onShake(()->shake(next));next.onPlacement(value->{if(recordableDesktop())steps.record("Window placement: "+value);});windows.put(id,next);
         if(workspace.getWidth()>0){next.open();renderTaskbar();}else workspace.post(()->{if(!destroyed&&next.getParent()==null){next.open();renderTaskbar();}});
     }
+    private static final int NOTE_OPEN=5101,NOTE_SAVE=5102;
+    private int noteGeneration;private Uri noteUri;private String noteName="Untitled",pendingNoteSave;
     private void notes(){
         if(restoreTool("@notes"))return;
-        LinearLayout body=Aero.column(this);
-        TextView hint=Aero.text(this,"  Saved automatically on this device",12,0xff567082);hint.setPadding(dp(4),dp(8),dp(4),dp(8));body.addView(hint);
-        EditText editor=new EditText(this);editor.setTypeface(Aero.face(this));editor.setTextSize(15);editor.setTextColor(Aero.INK);editor.setGravity(Gravity.TOP|Gravity.START);editor.setBackgroundColor(0xfffcfdf7);editor.setPadding(dp(14),dp(12),dp(14),dp(12));editor.setHint("A thought worth keeping…");editor.setContentDescription("Notepad text");editor.setText(store.prefs.getString("note",""));
-        editor.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int b,int c){}public void onTextChanged(CharSequence s,int a,int b,int c){store.prefs.edit().putString("note",s.toString()).apply();}public void afterTextChanged(Editable e){}});
-        body.addView(editor,new LinearLayout.LayoutParams(-1,0,1));window("@notes","Notepad",body);
+        XpNotepad body=new XpNotepad(this,store,new XpNotepad.Host(){
+            public void open(){noteGeneration++;try{startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/*").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION),NOTE_OPEN);}catch(RuntimeException unavailable){toast("No text document picker is available.");}}
+            public void save(String text,boolean saveAs){saveNote(text,saveAs);}
+            public void fresh(){noteGeneration++;noteUri=null;noteName="Untitled";noteDocument("");}
+            public void closed(){noteGeneration++;}
+        });window("@notes",noteName+" - Notepad",body);
+    }
+    private void noteDocument(String text){store.prefs.edit().putString("note",text).apply();DesktopWindow window=windows.get("@notes");if(window!=null&&window.getParent()!=null&&window.body instanceof XpNotepad){((XpNotepad)window.body).busy(false);((XpNotepad)window.body).document(text);window.caption(noteName+" - Notepad");renderTaskbar();}}
+    private void saveNote(String text,boolean saveAs){
+        if(!saveAs&&noteUri!=null){writeNote(noteUri,text);return;}
+        pendingNoteSave=text;try{startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("text/plain").putExtra(Intent.EXTRA_TITLE,noteName.equals("Untitled")?"Untitled.txt":noteName),NOTE_SAVE);}catch(RuntimeException unavailable){pendingNoteSave=null;toast("No document picker is available.");}
+    }
+    private String noteFileName(Uri uri){try(android.database.Cursor cursor=getContentResolver().query(uri,new String[]{android.provider.OpenableColumns.DISPLAY_NAME},null,null,null)){if(cursor!=null&&cursor.moveToFirst())return cursor.getString(0);}catch(RuntimeException ignored){}return "Document.txt";}
+    private void writeNote(Uri uri,String text){int generation=noteGeneration;worker.execute(()->{try(java.io.OutputStream out=getContentResolver().openOutputStream(uri,"wt")){if(out==null)throw new java.io.IOException("File unavailable");out.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));String name=noteFileName(uri);main.post(()->{if(destroyed)return;if(generation!=noteGeneration){toast("Document saved");return;}noteUri=uri;noteName=name;DesktopWindow window=windows.get("@notes");if(window!=null&&window.getParent()!=null)window.caption(noteName+" - Notepad");renderTaskbar();toast("Document saved");});}catch(Exception failure){main.post(()->toast("Could not save this document. Use Save As to choose a writable file."));}});}
+    private void noteResult(int request,int result,Intent data){
+        if(result!=RESULT_OK||data==null||data.getData()==null){pendingNoteSave=null;return;}Uri uri=data.getData();if(!"content".equals(uri.getScheme())){toast("Choose a document from the file picker.");return;}
+        if(request==NOTE_SAVE){String text=pendingNoteSave==null?store.prefs.getString("note",""):pendingNoteSave;pendingNoteSave=null;writeNote(uri,text);return;}
+        int generation=noteGeneration;DesktopWindow current=windows.get("@notes");if(current!=null&&current.body instanceof XpNotepad)((XpNotepad)current.body).busy(true);
+        worker.execute(()->{try(java.io.InputStream in=getContentResolver().openInputStream(uri)){if(in==null)throw new java.io.IOException();java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream();byte[] block=new byte[8192];int n;while((n=in.read(block))!=-1){if(out.size()+n>1000000)throw new java.io.IOException("Too large");out.write(block,0,n);}String loaded=XpTextFiles.decode(out.toByteArray()),name=noteFileName(uri);main.post(()->{if(destroyed||generation!=noteGeneration)return;noteUri=uri;noteName=name;open("@notes");noteDocument(loaded);});
+        }catch(Exception failure){main.post(()->{if(destroyed||generation!=noteGeneration)return;DesktopWindow window=windows.get("@notes");if(window!=null&&window.body instanceof XpNotepad)((XpNotepad)window.body).busy(false);toast("Could not open this text document. Notepad accepts up to 200,000 characters.");});}});
     }
     private final VistaShell.Actions vistaActions=new VistaShell.Actions(){public void open(String id){MainActivity.this.open(id);}public void action(String id){vistaAction(id);}};
     private final DesktopOrganizer.Host organizerHost=new DesktopOrganizer.Host(){public String label(String id){return MainActivity.this.label(id);}public View icon(String id,int size){return MainActivity.this.icon(id,size);}public void changed(){desktopChanged();}public void open(String id){MainActivity.this.open(id);}public void openFolderWindow(String id){
@@ -1183,6 +1200,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         });
     }
     private void xpAction(String id){
+        if(id.equals("xp:mail")){try{startActivity(Intent.makeMainSelectorActivity(Intent.ACTION_MAIN,Intent.CATEGORY_APP_EMAIL));}catch(RuntimeException unavailable){toast("Choose or install an Android mail app to use E-mail.");}return;}
         if(id.equals("xp:run")){
             EditText command=new EditText(this);command.setSingleLine();command.setTextSize(16);command.setHint("App name, notepad, explorer or control");command.setContentDescription("Open program");
             AlertDialog dialog=Aero.dialog(this).setTitle("Run").setMessage("Type the name of an installed app or an Nth tool to open it.").setView(command).setPositiveButton("OK",null).setNegativeButton("Cancel",null).create();
@@ -1211,7 +1229,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             TextView title=Aero.text(this,"welcome",34,Color.WHITE);Aero.bold(title);title.setGravity(Gravity.CENTER);panel.addView(title,new LinearLayout.LayoutParams(-1,dp(80)));
             TextView instruction=Aero.text(this,"To begin, select your desktop",16,Color.WHITE);instruction.setGravity(Gravity.CENTER);panel.addView(instruction,new LinearLayout.LayoutParams(-1,dp(56)));
             LinearLayout account=new LinearLayout(this);account.setGravity(Gravity.CENTER_VERTICAL);account.setPadding(dp(12),dp(9),dp(12),dp(9));account.setBackground(Aero.panel(this,0xff8ca7ef,0xff6587dc,4,0xffc2d1ff));account.setFocusable(true);account.setContentDescription("Return to desktop");
-            account.addView(ProfilePortrait.view(this,store),new LinearLayout.LayoutParams(dp(54),dp(54)));TextView name=Aero.text(this,store.prefs.getString("desktop_name",getString(R.string.app_name)),19,Color.WHITE);name.setPadding(dp(12),0,0,0);account.addView(name,new LinearLayout.LayoutParams(0,dp(64),1));account.setOnClickListener(v->welcome.dismiss());panel.addView(account,new LinearLayout.LayoutParams(Math.min(dp(370),getResources().getDisplayMetrics().widthPixels-dp(48)),dp(82)));
+            account.addView(ProfilePortrait.view(this,store),new LinearLayout.LayoutParams(dp(54),dp(54)));TextView name=Aero.text(this,store.prefs.getString("desktop_name",getString(R.string.app_name)),19,Color.WHITE);name.setPadding(dp(12),0,0,0);account.addView(name,new LinearLayout.LayoutParams(0,dp(64),1));account.setOnClickListener(v->welcome.dismiss());panel.addView(account,new LinearLayout.LayoutParams(Math.min(dp(370),getResources().getDisplayMetrics().widthPixels-dp(XpMetrics.ROW)),dp(82)));
             TextView note=Aero.text(this,"Your apps and windows are kept while you’re away.",12,0xffedf3ff);note.setGravity(Gravity.CENTER);panel.addView(note,new LinearLayout.LayoutParams(-1,dp(70)));welcome.setContentView(panel);welcome.show();welcome.getWindow().setLayout(-1,-1);
         }
     }
@@ -1256,7 +1274,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         switch(id){
             case "android:wifi":action=Settings.ACTION_WIFI_SETTINGS;break;case "android:network":action=Settings.ACTION_WIRELESS_SETTINGS;break;case "android:bluetooth":action=Settings.ACTION_BLUETOOTH_SETTINGS;break;
             case "android:sound":action=Settings.ACTION_SOUND_SETTINGS;break;case "android:display":action=Settings.ACTION_DISPLAY_SETTINGS;break;case "android:apps":action=Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS;break;
-            case "android:defaults":action=Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS;break;case "android:security":action=Settings.ACTION_SECURITY_SETTINGS;break;case "android:privacy":action=Settings.ACTION_PRIVACY_SETTINGS;break;
+            case "android:print":action=Settings.ACTION_PRINT_SETTINGS;break;case "android:defaults":action=Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS;break;case "android:security":action=Settings.ACTION_SECURITY_SETTINGS;break;case "android:privacy":action=Settings.ACTION_PRIVACY_SETTINGS;break;
             case "android:storage":action=Settings.ACTION_INTERNAL_STORAGE_SETTINGS;break;case "android:battery":action=Settings.ACTION_BATTERY_SAVER_SETTINGS;break;case "android:accounts":action=Settings.ACTION_SYNC_SETTINGS;break;
             case "android:accessibility":action=Settings.ACTION_ACCESSIBILITY_SETTINGS;break;case "android:date":action=Settings.ACTION_DATE_SETTINGS;break;case "android:language":action=Settings.ACTION_LOCALE_SETTINGS;break;case "android:device":action=Settings.ACTION_DEVICE_INFO_SETTINGS;break;
             default:action=Settings.ACTION_SETTINGS;
@@ -1592,6 +1610,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
+        if(request==NOTE_OPEN||request==NOTE_SAVE){noteResult(request,result,data);return;}
         if(request==AppUninstaller.REQUEST){String removed=AppUninstaller.returned(this,store);if(removed!=null)worker.execute(()->DesktopCache.forgetPackage(getApplicationContext(),removed));DesktopCache.invalidate();scanApps();return;}
         if(initialization!=null&&initialization.result(request,result,data)){if(request==REQUEST_HOME)homeRequestInFlight=false;return;}
         if(request==REQUEST_HOME){
@@ -1641,7 +1660,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         if(tray!=null)tray.clockNow();
         if(clock!=null){
             Date now=new Date();
-            clock.setText(DateFormat.getTimeFormat(this).format(now)+"\n"+new SimpleDateFormat("MMM d",Locale.getDefault()).format(now));
+            clock.setText(DateFormat.getTimeFormat(this).format(now));clock.setTooltipText(new SimpleDateFormat("EEEE, MMMM d, yyyy",Locale.getDefault()).format(now));
         }
     }
     private void handleBack(){

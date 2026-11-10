@@ -39,7 +39,7 @@ final class SystemTray extends LinearLayout {
     SystemTray(Context c,FrameLayout workspace,AeroWallpaper wallpaper,Host host){
         super(c);notices=c.getSharedPreferences("seven_action_center",0);prefs=c.getSharedPreferences("desktop",0);expanded=prefs.getBoolean("tray_expanded",false);brightness=new BrightnessControl((android.app.Activity)c);this.workspace=workspace;this.wallpaper=wallpaper;this.host=host;connections=c.getSystemService(ConnectivityManager.class);audio=c.getSystemService(AudioManager.class);power=c.getSystemService(PowerManager.class);setGravity(Gravity.CENTER_VERTICAL);
         String[] names={"Battery status","Network status","Volume control","Brightness control"};String[] pages={"battery","network","volume","brightness"};
-        for(int i=0;i<names.length;i++){TrayIcon icon=new TrayIcon(c,i);icon.setContentDescription(names[i]);icon.setFocusable(true);icon.setBackground(Aero.selection(c));String target=pages[i];icon.setOnClickListener(v->show(target));addView(icon,new LayoutParams(dp(44),dp(48)));icons.add(icon);}
+        for(int i=0;i<names.length;i++){TrayIcon icon=new TrayIcon(c,i);icon.setContentDescription(names[i]);icon.setFocusable(true);icon.setBackground(Aero.selection(c));String target=pages[i];icon.setOnClickListener(v->show(target));addView(icon,new LayoutParams(dp(28),dp(XpMetrics.ROW)));icons.add(icon);}
         taskManager = new AeroIcon(c, "taskmanager");
         taskManager.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
         taskManager.setFocusable(true);
@@ -47,15 +47,15 @@ final class SystemTray extends LinearLayout {
         taskManager.setTooltipText("Task Manager");
         taskManager.setBackground(Aero.selection(c));
         taskManager.setOnClickListener(v -> host.open("@taskmanager"));
-        addView(taskManager, new LayoutParams(dp(44), dp(48)));
+        addView(taskManager, new LayoutParams(dp(28), dp(XpMetrics.ROW)));
         actionCenter=new TrayFlag(c);
         actionCenter.setFocusable(true);
         actionCenter.setContentDescription("Action Center");
         actionCenter.setTooltipText("Action Center");
         actionCenter.setBackground(Aero.selection(c));
         actionCenter.setOnClickListener(v->show("actioncenter"));
-        addView(actionCenter,new LayoutParams(dp(44),dp(48)));
-        compactStatus=Aero.text(c,"⌃",21,XpTheme.taskbarInk(c));compactStatus.setGravity(Gravity.CENTER);compactStatus.setContentDescription("Device controls");compactStatus.setFocusable(true);compactStatus.setBackground(Aero.selection(c));compactStatus.setOnClickListener(v->{expanded=!expanded;prefs.edit().putBoolean("tray_expanded",expanded).apply();updateIconVisibility();host.layout();});compactStatus.setOnLongClickListener(v->{show("controls");return true;});addView(compactStatus,0,new LayoutParams(dp(44),dp(48)));updateIconVisibility();
+        addView(actionCenter,new LayoutParams(dp(28),dp(XpMetrics.ROW)));
+        compactStatus=Aero.text(c,"⌃",21,XpTheme.taskbarInk(c));compactStatus.setGravity(Gravity.CENTER);compactStatus.setContentDescription("Device controls");compactStatus.setFocusable(true);compactStatus.setBackground(Aero.selection(c));compactStatus.setOnClickListener(v->{expanded=!expanded;prefs.edit().putBoolean("tray_expanded",expanded).apply();updateIconVisibility();host.layout();});compactStatus.setOnLongClickListener(v->{show("controls");return true;});addView(compactStatus,0,new LayoutParams(dp(28),dp(XpMetrics.ROW)));updateIconVisibility();
     }
     @Override protected void onMeasure(int widthSpec,int heightSpec){
         sizeIcons();
@@ -67,10 +67,10 @@ final class SystemTray extends LinearLayout {
         // Use one budget in measure and layout, including narrower inset/IME transitions.
         int workspaceWidth=workspaceBudget>0?Math.min(workspaceBudget,configured):configured;
         // Leave room for Start, the clock, and part of the scrolling task strip.
-        int width = Math.min(dp(44), Math.max(dp(24), (workspaceWidth - dp(200)) / getChildCount()));
+        int width = Math.min(dp(28), Math.max(dp(22), (workspaceWidth - dp(200)) / getChildCount()));
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
-            int childWidth = !expanded && child == compactStatus ? dp(44) : width;
+            int childWidth = !expanded && child == compactStatus ? dp(28) : width;
             ViewGroup.LayoutParams params = child.getLayoutParams();
             if (params.width != childWidth) {
                 params.width = childWidth;
@@ -79,16 +79,14 @@ final class SystemTray extends LinearLayout {
         }
         int horizontalPadding = Math.max(0, (width - dp(28)) / 2);
         if (taskManager.getPaddingLeft() != horizontalPadding) {
-            taskManager.setPadding(horizontalPadding, dp(10), horizontalPadding, dp(10));
+            taskManager.setPadding(horizontalPadding, dp(9), horizontalPadding, dp(9));
         }
     }
-    void clockNow(){if(compactStatus!=null){compactStatus.setTextSize(20);compactStatus.setText(expanded?"›":"‹");compactStatus.setTooltipText(expanded?"Hide notification icons":"Show hidden notification icons");}}
+    void clockNow(){if(compactStatus!=null){compactStatus.setTextSize(16);compactStatus.setText(expanded?"›":"‹");compactStatus.setTooltipText(expanded?"Hide notification icons":"Show hidden notification icons");}}
     private void updateIconVisibility() {
         taskManager.setVisibility(expanded ? VISIBLE : GONE);
         actionCenter.setVisibility(expanded ? VISIBLE : GONE);
-        for (TrayIcon icon : icons) {
-            icon.setVisibility(expanded ? VISIBLE : GONE);
-        }
+        for(int i=0;i<icons.size();i++){boolean show=prefs.getBoolean(new String[]{"tray_battery","tray_network","tray_volume","tray_brightness"}[i],true)&&(expanded||i==1||i==2);icons.get(i).setVisibility(show?VISIBLE:GONE);}
         clockNow();
     }
 
@@ -101,7 +99,7 @@ final class SystemTray extends LinearLayout {
     boolean dismiss(){if(cover==null)return false;workspace.removeView(cover);cover=null;summary=null;volume=null;page="";tracking=false;main.removeCallbacks(tick);return true;}
     void show(String value){
         if(value.equals(page)&&cover!=null){dismiss();return;}dismiss();host.opening();page=value;
-        cover=new FrameLayout(getContext());cover.setElevation(dp(48));cover.setFocusableInTouchMode(true);cover.setContentDescription("System tray flyout");cover.setOnClickListener(v->dismiss());workspace.addView(cover,new FrameLayout.LayoutParams(-1,-1));
+        cover=new FrameLayout(getContext());cover.setElevation(dp(XpMetrics.ROW));cover.setFocusableInTouchMode(true);cover.setContentDescription("System tray flyout");cover.setOnClickListener(v->dismiss());workspace.addView(cover,new FrameLayout.LayoutParams(-1,-1));
         frame=Aero.column(getContext());frame.setBackground(new AeroGlass(wallpaper,AeroGlass.START));Aero.pad(frame,6);frame.setClickable(true);FrameLayout.LayoutParams position=new FrameLayout.LayoutParams(dp(324),dp(285),Gravity.BOTTOM|Gravity.END);position.bottomMargin=dp(5);cover.addView(frame,position);
         LinearLayout title=new LinearLayout(getContext());TextView name=Aero.text(getContext(),value.equals("actioncenter")?"Action Center":value.equals("battery")?"Power and battery":value.equals("network")?"Network connections":value.equals("volume")?"Volume":value.equals("brightness")?"Brightness":value.equals("controls")?"Device controls":"Clock and calendar",14,Color.WHITE);name.setPadding(dp(6),0,0,0);title.addView(name,new LayoutParams(0,dp(36),1));TextView close=Aero.button(getContext(),"×",this::dismiss);close.setContentDescription("Close tray flyout");title.addView(close,new LayoutParams(dp(38),dp(34)));frame.addView(title);
         LinearLayout body=Aero.column(getContext());Aero.pad(body,12);body.setBackground(Aero.panel(getContext(),0xfffdfefe,0xfff0f6fa,1,0xffa8bccb));ScrollView scroll=new ScrollView(getContext());scroll.setFillViewport(true);scroll.addView(body);frame.addView(scroll,new LayoutParams(-1,0,1));
@@ -118,13 +116,13 @@ final class SystemTray extends LinearLayout {
                 }
                 button(body,"Open Action Center",()->{dismiss();host.open("@actioncenter");});break;
             case "controls":
-                for(String[] choice:new String[][]{{"Battery status","battery"},{"Network status","network"},{"Volume control","volume"},{"Brightness control","brightness"},{"Clock and calendar","calendar"}}){TextView link=Aero.button(getContext(),choice[0],()->show(choice[1]));link.setContentDescription(choice[0]);body.addView(link,new LayoutParams(-1,dp(48)));}break;
+                for(String[] choice:new String[][]{{"Battery status","battery"},{"Network status","network"},{"Volume control","volume"},{"Brightness control","brightness"},{"Clock and calendar","calendar"}}){TextView link=Aero.button(getContext(),choice[0],()->show(choice[1]));link.setContentDescription(choice[0]);body.addView(link,new LayoutParams(-1,dp(XpMetrics.ROW)));}break;
             case "brightness":brightness.content(body);break;
             case "battery":button(body,"Power settings",()->host.action("android:battery"));break;
             case "network":button(body,"Wi-Fi settings",()->host.action("android:wifi"));button(body,"Network settings",()->host.action("android:network"));break;
             case "volume":
                 volume=new SeekBar(getContext());volume.setContentDescription("Media volume");int max=audio==null?0:audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);volume.setMax(max);volume.setEnabled(audio!=null&&!audio.isVolumeFixed()&&max>0);volume.setProgress(audio==null?0:audio.getStreamVolume(AudioManager.STREAM_MUSIC));restoreVolume=Math.max(1,volume.getProgress());
-                volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onStartTrackingTouch(SeekBar b){tracking=true;}public void onStopTrackingTouch(SeekBar b){tracking=false;update();}public void onProgressChanged(SeekBar b,int n,boolean user){if(user)setVolume(n);}});body.addView(volume,new LayoutParams(-1,dp(44)));
+                volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onStartTrackingTouch(SeekBar b){tracking=true;}public void onStopTrackingTouch(SeekBar b){tracking=false;update();}public void onProgressChanged(SeekBar b,int n,boolean user){if(user)setVolume(n);}});body.addView(volume,new LayoutParams(-1,dp(28)));
                 button(body,"Mute / restore media",()->{if(audio==null||audio.isVolumeFixed())return;int current=audio.getStreamVolume(AudioManager.STREAM_MUSIC);if(current>0)restoreVolume=current;setVolume(current>0?0:restoreVolume);});button(body,"Sound settings",()->host.action("android:sound"));break;
             case "calendar":
                 TextView month=Aero.text(getContext(),"",15,0xff234f75);month.setGravity(Gravity.CENTER);MonthCalendarView[] ref=new MonthCalendarView[1];MonthCalendarView calendar=new MonthCalendarView(getContext(),()->{if(ref[0]!=null)month.setText(ref[0].title());});ref[0]=calendar;
@@ -132,7 +130,7 @@ final class SystemTray extends LinearLayout {
         }
         bounds(leftInset,rightInset);cover.bringToFront();update();if(running)main.postDelayed(tick,1000);
     }
-    private void button(LinearLayout body,String title,Runnable action){TextView button=Aero.button(getContext(),title,action);button.setContentDescription(title);LayoutParams p=new LayoutParams(-1,dp(48));p.topMargin=dp(6);body.addView(button,p);}
+    private void button(LinearLayout body,String title,Runnable action){TextView button=Aero.button(getContext(),title,action);button.setContentDescription(title);LayoutParams p=new LayoutParams(-1,dp(XpMetrics.ROW));p.topMargin=dp(6);body.addView(button,p);}
     private void setVolume(int level){if(audio==null||audio.isVolumeFixed())return;try{audio.setStreamVolume(AudioManager.STREAM_MUSIC,Math.max(0,Math.min(audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC),level)),0);update();}catch(SecurityException ex){Toast.makeText(getContext(),"Use Sound settings to change this volume",Toast.LENGTH_SHORT).show();}}
     private int percent(){int level=battery==null?-1:battery.getIntExtra(BatteryManager.EXTRA_LEVEL,-1),scale=battery==null?0:battery.getIntExtra(BatteryManager.EXTRA_SCALE,100);return level<0||scale<1?-1:Math.min(100,Math.max(0,Math.round(level*100f/scale)));}
     private boolean charging(){int status=battery==null?0:battery.getIntExtra(BatteryManager.EXTRA_STATUS,0);return status==BatteryManager.BATTERY_STATUS_CHARGING||status==BatteryManager.BATTERY_STATUS_FULL;}
