@@ -21,11 +21,15 @@ jobs:
           packages: 'platform-tools'
       - run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon
+      - run: ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :fixture:assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: XP-preview-apks
           path: app/build/outputs/apk/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: XP-test-fixture
+          path: fixture/build/outputs/apk/debug/fixture-debug.apk
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -54,6 +58,10 @@ jobs:
         with:
           name: XP-preview-apks
           path: build-apks
+      - uses: actions/download-artifact@v4
+        with:
+          name: XP-test-fixture
+          path: build-fixture
       - name: Enable hardware virtualization
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -71,14 +79,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           emulator-boot-timeout: 300
           disable-animations: true
-          script: |
-            adb install --no-streaming -r build-apks/debug/app-debug.apk
-            adb install --no-streaming -r build-apks/androidTest/debug/app-debug-androidTest.apk
-            adb shell am instrument -w com.nthexperience.desktop.xp.test/com.nthexperience.desktop.XpSmoke | tee xp-native.txt
-            grep -q 'PASS:' xp-native.txt
-            adb shell am instrument -w com.nthexperience.desktop.xp.test/com.nthexperience.desktop.XpIndependentRowsSmoke | tee xp-rows.txt
-            grep -q 'PASS:' xp-rows.txt
-            adb pull /sdcard/Android/data/com.nthexperience.desktop.xp/files/xp-verification screenshots
+          script: bash checks/run-xp-native.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -86,4 +87,6 @@ jobs:
           path: |
             xp-native.txt
             xp-rows.txt
+            xp-logcat.txt
+            xp-activities.txt
             screenshots/
