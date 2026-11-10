@@ -23,7 +23,21 @@ Java 17 / Gradle 8.13 / compile and target SDK 36; minimum SDK 26.
 - APK v2 signature verifies. Certificate SHA-256 remains `557675b2401275104bf87c13c332f28cfd907df7898d979e952b7e4daa2481e2`.
 - `git diff --check` passes.
 
-The GitHub workflow retains the separate installed-app and row suites and their native results. This document records local checks; workflow run artifacts provide subsequent emulator evidence. The earlier software-only emulator installation failure is not treated as an XP application test result.
+## Completed GitHub verification
+
+[Run 42897435848](https://github.com/bdredenbach/Windows-XP-Style-Android-Launcher/actions/runs/42897435848) passed for implementation commit `3150916aa26d712b45b0402ffa22d7ac0137b716`.
+
+| Check | Android 11 / API30 | Android 16 / API36 |
+| --- | --- | --- |
+| Installed core suite | PASS, 46 checks | PASS, 46 checks |
+| Six themes, both orientations | PASS | PASS |
+| Independent-row suite | PASS | PASS |
+| Actual installed Android app launched after moving its pin | PASS | PASS |
+| Edge/cancel, empty rows, static fit, keyboard/accessibility | PASS | PASS |
+
+The build job passed all 94 unit tests with zero failures/errors. Retained scoped AndroidRuntime/XpSmoke logs contain no error entries. Native row screenshots were inspected in Blue, Silver and Classic. The suites cover actual touch input, preserved opposite-row/fixed-control geometry, collapse/re-expansion, rotation, launch/reopen and actual backup application.
+
+The fixture APK is installed before the native checks. Each suite starts from an unlocked screen and isolated test app state. `checks/run-xp-native.sh` bounds device waits and retains diagnostic output. No physical Pixel test has been claimed; broader XP visual fidelity remains a separate pass. This documentation-only update does not change the tested application or test source.
 
 ## Input scope
 

@@ -30,15 +30,17 @@ Log Off returns to an in-launcher Welcome screen and preserves windows. Turn Off
 Use Java 17 and Android SDK 36:
 
 ```sh
-./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest
+./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :fixture:assembleDebug
+adb install fixture/build/outputs/apk/debug/fixture-debug.apk
 adb install app/build/outputs/apk/debug/app-debug.apk
 adb install app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 adb shell am instrument -w com.nthexperience.desktop.xp.test/com.nthexperience.desktop.XpSmoke
+adb shell am instrument -w com.nthexperience.desktop.xp.test/com.nthexperience.desktop.XpIndependentRowsSmoke
 ```
 
-`XpLauncherTest` covers restored preferences, theme/backup validation, legacy themes and program tap/hold actions on a narrow menu. `XpSmoke` exercises the installed app, Explorer, Display Properties, all six schemes in both orientations, expanded Start anchoring and backup capture. See `docs/XP_0_1_VALIDATION.txt` for checks actually completed for this preview.
+`XpLauncherTest` covers restored preferences, theme/backup validation, legacy themes and program tap/hold actions on a narrow menu. `XpSmoke` exercises the installed app, Explorer, Display Properties, all six schemes in both orientations, expanded Start anchoring and backup capture. See `docs/XP_0_1_1_HANDOFF.md` for the completed 0.1.1 checks. The earlier preview record remains in `docs/XP_0_1_VALIDATION.txt`.
 
-The workflow prepares Android 11 and Android 16 native checks when this source is pushed to a repository. A workflow definition is not evidence that those jobs have run.
+The [0.1.1 verification run](https://github.com/bdredenbach/Windows-XP-Style-Android-Launcher/actions/runs/42897435848) passed all 94 unit tests and both installed-app suites on Android 11 and Android 16. The native core suite completed 46 checks per platform; the row suite passed real touch, state restoration and installed Android app launch checks.
 
 ## Preview scope and next fidelity pass
 
