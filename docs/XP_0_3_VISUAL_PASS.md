@@ -58,3 +58,19 @@ Media Player, Control Panel and all six schemes in both orientations. The app-ro
 suite checks real swipes, drags, fixed controls, rotation, persistence and backup
 using the new shared row dimensions. The final run and results are recorded below
 when the workflow completes.
+
+## Completed verification
+
+- Tested source: 8dec2dc561109f09cd4a5067f4572beeeebf4d8b.
+- [Passing workflow](https://github.com/bdredenbach/Windows-XP-Style-Android-Launcher/actions/runs/42913242371).
+- 103 unit tests, no failures/errors/skips; 60 native-graphics unit renders.
+- Android 11 / API 30 and Android 16 / API 36: 70 launcher checks each and full
+  independent-row gesture assertions PASS, including real cross-row drag/drop.
+- All 22 final core captures per API contain visible content. The headless Android
+  16 compositor uses the existing native app-window render fallback as needed.
+- The final Control Panel menu is above its address row. Taskbar tests use measured
+  row centers/bounds instead of the earlier 48dp assumptions; assertions retained.
+
+The delivered preview is debug-signed with the earlier XP certificate, so it can
+update earlier XP builds. Physical Pixel 10 testing and end-to-end web/media codec
+coverage are not claimed by these UI/navigation checks.

@@ -25,6 +25,11 @@ This remains an Android launcher. WebView, file permissions and device settings
 continue to be managed by Android. References, asset notices and design tradeoffs
 are recorded in `docs/XP_0_3_VISUAL_PASS.md` and `ASSETS.md`.
 
+[0.3.0 verification](https://github.com/bdredenbach/Windows-XP-Style-Android-Launcher/actions/runs/42913242371)
+passed 103 unit tests, 70 installed-app checks per API, and the full independent-row
+suite on both Android 11 and Android 16. Sixty unit renders and 22 core captures per
+API cover the six color schemes, portrait/landscape layouts and refreshed app screens.
+
 ## XP training-guide fidelity pass
 
 0.2.0 adds the supplied 20-picture wallpaper collection, including Bliss as the
