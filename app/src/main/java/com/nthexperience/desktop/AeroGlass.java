@@ -1,0 +1,116 @@
+package com.nthexperience.desktop;
+
+import android.graphics.*;
+import android.graphics.drawable.Drawable;
+import android.view.View;
+
+/** Samples the softened wallpaper beneath the chrome, keeping foreground text sharp. */
+final class AeroGlass extends Drawable {
+    static final int WINDOW=0,START=1,TASKBAR=2,SIDEBAR=3,TASKBUTTON=4;
+    private final AeroWallpaper wallpaper;
+    private final int style;
+    private final Paint p=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);
+    private final RectF rect=new RectF();
+    private final Path clip=new Path();
+    private boolean active=true;
+    private boolean stacked,idle,hot,pressed,peek,focused;
+    private int accent=0xff79c9f5;private float pointerX=-1,pointerY=-1;
+    private int insetTop,progress=-2;
+    private int drawableAlpha=255;
+    static final int DEFAULT_OPACITY=85;
+    private final android.content.SharedPreferences prefs;
+    static final String[] COLOR_NAMES={"Frost","Graphite","Seafoam","Sage","Lavender","Gold","Ruby","Clear"};
+    static final int[] TINTS={0xff599cbd,0xff58636e,0xff3e9ca0,0xff6d986c,0xff8b78b0,0xffb69a5c,0xffa56872,0xffb4cad7};
+    AeroGlass(AeroWallpaper wallpaper,int style){this.wallpaper=wallpaper;this.style=style;prefs=wallpaper.getContext().getSharedPreferences("desktop",0);wallpaper.register(this);}
+    void active(boolean value){if(active!=value){active=value;invalidateSelf();}}
+    void stacked(boolean value){stacked=value;invalidateSelf();}
+    void progress(int value){if(progress!=value){progress=value;invalidateSelf();}}
+    void idle(boolean value){idle=value;invalidateSelf();}
+    void accent(int color){accent=color;invalidateSelf();}
+    void hotTrack(boolean value,float x,float y){hot=value;pointerX=x;pointerY=y;invalidateSelf();}
+    void press(boolean value,float x,float y){pressed=value;pointerX=x;pointerY=y;invalidateSelf();}
+    void peek(boolean value){peek=value;invalidateSelf();}
+    void insetTop(int pixels){insetTop=pixels;invalidateSelf();}
+    @Override public boolean isStateful(){return style==TASKBUTTON;}
+    @Override protected boolean onStateChange(int[] state){
+        boolean next=false;for(int value:state)if(value==android.R.attr.state_focused)next=true;
+        if(next==focused)return false;focused=next;invalidateSelf();return true;
+    }
+    private void drawXp(Canvas c){
+        android.content.Context context=wallpaper.getContext();
+        rect.set(getBounds());if(rect.isEmpty())return;
+        float d=context.getResources().getDisplayMetrics().density;
+        if(style==WINDOW||style==START||style==TASKBAR){
+            if(peek){p.setShader(null);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2*d);p.setColor(0xff316ac5);c.drawRect(rect,p);p.setStyle(Paint.Style.FILL);return;}
+            android.graphics.drawable.Drawable chrome=XpTheme.chrome(context,style);chrome.setBounds(getBounds());chrome.draw(c);
+            if(style==WINDOW&&!active){p.setShader(null);p.setColor(0x557b91b4);c.drawRect(rect.left,rect.top,rect.right,Math.min(rect.bottom,rect.top+50*d),p);}
+            return;
+        }
+        if(style==SIDEBAR)return;
+        if(idle&&!hot&&!pressed&&!focused&&progress<-1)return;
+        int[] palette=XpTheme.palette(context);int top=active||pressed?palette[2]:palette[0],bottom=active||pressed?palette[1]:palette[1];
+        if(XpTheme.scheme(context)==5){top=active||pressed?0xffbdb9b1:0xffece8df;bottom=0xffd4d0c8;}
+        p.setShader(new LinearGradient(0,rect.top,0,rect.bottom,top,bottom,Shader.TileMode.CLAMP));
+        c.drawRoundRect(rect.left+d,rect.top+4*d,rect.right-d,rect.bottom-4*d,3*d,3*d,p);p.setShader(null);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(d);p.setColor(hot||focused?0xffffdd69:0xff9abce9);
+        c.drawRoundRect(rect.left+d,rect.top+4*d,rect.right-d,rect.bottom-4*d,3*d,3*d,p);p.setStyle(Paint.Style.FILL);
+        if(progress>=0){p.setColor(0xff77b948);c.drawRect(rect.left+2*d,rect.bottom-7*d,rect.left+(rect.width()-4*d)*Math.min(100,progress)/100f,rect.bottom-4*d,p);}
+    }
+    @Override public void draw(Canvas c){
+        if(wallpaper!=null){drawXp(c);return;}
+        rect.set(getBounds());rect.top+=insetTop;if(rect.isEmpty())return;float d=getCallback() instanceof View?((View)getCallback()).getResources().getDisplayMetrics().density:1;
+        float radius=(style==TASKBAR||style==SIDEBAR)?0:6*d;
+        boolean transparent=prefs.getBoolean("aero_transparency",true);
+        int opacity=transparent?Math.max(0,Math.min(100,prefs.getInt("aero_opacity",DEFAULT_OPACITY))):100;
+        int alpha=Math.round(drawableAlpha*opacity/100f);if(alpha==0)return;
+        // Composite the whole surface once: sampling, tint, reflection and edging share one opacity.
+        if(style==TASKBUTTON&&idle&&!hot&&!pressed&&!focused&&progress<-1)return;
+        int layer=c.saveLayerAlpha(rect,alpha);
+        if(style==WINDOW&&peek){
+            p.setStyle(Paint.Style.STROKE);p.setShader(null);p.setStrokeWidth(2*d);p.setColor(0x996f9fbe);
+            c.drawRoundRect(rect.left+d,rect.top+d,rect.right-d,rect.bottom-d,radius,radius,p);
+            p.setStrokeWidth(d);p.setColor(0xeef3fbff);
+            c.drawRoundRect(rect.left+3*d,rect.top+3*d,rect.right-3*d,rect.bottom-3*d,radius,radius,p);
+            p.setStyle(Paint.Style.FILL);c.restoreToCount(layer);return;
+        }
+        clip.reset();clip.addRoundRect(rect,radius,radius,Path.Direction.CW);int save=c.save();c.clipPath(clip);
+        p.setColor(0xff0d1e2b);p.setAlpha(255);c.drawRect(rect,p);
+        if(transparent&&getCallback() instanceof View)wallpaper.drawGlass(c,(View)getCallback());
+        int[] colors;
+        if(style==WINDOW)colors=new int[]{0xb2bedbe8,0x88b2d3e4,0x9b7f9db1,0xccc0d9e7};
+        else if(style==START)colors=new int[]{0xdb426584,0xd32a4967,0xe01d3550,0xe42e4c68};
+        else if(style==TASKBUTTON)colors=active?new int[]{0xeb557e98,0xe62c526b,0xee234056,0xe947718c}:new int[]{0x667c94a4,0x55536c7e,0x55384f60,0x66647e91};
+        else if(style==TASKBAR)colors=new int[]{0xe75b809f,0xdd365574,0xee19354f,0xf011253b};
+        else colors=new int[]{0x33212b33,0x4423313e,0x55202a34,0x55202a34};
+        int tint=TINTS[Math.max(0,Math.min(TINTS.length-1,prefs.getInt("aero_color",0)))];float intensity=Math.max(0,Math.min(100,prefs.getInt("aero_intensity",45)))/100f;
+        for(int i=0;i<colors.length;i++){int tintAlpha=transparent?Color.alpha(colors[i]):255;int target=style==WINDOW?mix(0xffe2edf3,tint,.6f):style==SIDEBAR?mix(0xff0b2435,tint,.35f):mix(0xff0d1e2b,tint,.45f);colors[i]=(mix(colors[i],target,intensity*.82f)&0x00ffffff)|(tintAlpha<<24);if(style==WINDOW&&!active)colors[i]=mix(colors[i],0xffc6d0d5,.38f)|(tintAlpha<<24);}
+        p.setShader(new LinearGradient(0,rect.top,0,rect.bottom,colors,null,Shader.TileMode.CLAMP));p.setAlpha(255);c.drawRect(rect,p);p.setShader(null);
+        if(style!=SIDEBAR){
+            p.setShader(new LinearGradient(0,0,rect.width(),rect.height(),new int[]{0x00ffffff,0x20ffffff,0x00ffffff,0x10ffffff},new float[]{0,.23f,.45f,1},Shader.TileMode.CLAMP));
+            Path beam=new Path();beam.moveTo(rect.width()*.05f,0);beam.lineTo(rect.width()*.35f,0);beam.lineTo(rect.width()*.78f,rect.height());beam.lineTo(rect.width()*.48f,rect.height());beam.close();c.drawPath(beam,p);p.setShader(null);
+        }
+        if(style==TASKBUTTON&&(hot||pressed||focused)){
+            float x=pointerX<0?rect.centerX():Math.max(rect.left,Math.min(rect.right,pointerX));
+            float y=pointerY<0?rect.bottom:Math.max(rect.top,Math.min(rect.bottom,pointerY));
+            int bright=(accent&0x00ffffff)|((pressed?235:205)<<24);
+            p.setShader(new RadialGradient(x,y,Math.max(20*d,rect.width()*.95f),new int[]{bright,accent&0x00ffffff},null,Shader.TileMode.CLAMP));
+            c.drawRect(rect,p);p.setShader(null);
+        }
+        if(style==TASKBUTTON&&progress>=-1){
+            p.setColor(progress<0?0xff68acd2:0xff6cc564);
+            float portion=progress<0?1:Math.max(.04f,Math.min(1,progress/100f));
+            c.drawRect(rect.left,rect.bottom-4*d,rect.left+rect.width()*portion,rect.bottom,p);
+        }
+        c.restoreToCount(save);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(d);p.setColor(style==WINDOW?0xc5f3fbff:0x90b8ced9);c.drawRoundRect(rect.left+d*.5f,rect.top+d*.5f,rect.right-d*.5f,rect.bottom-d*.5f,radius,radius,p);
+        p.setColor(0x55000000);c.drawLine(rect.left,rect.bottom-d,rect.right,rect.bottom-d,p);
+        if(stacked&&rect.width()>12*d){
+            p.setColor(0xb5c6e4f5);
+            for(int i=1;i<=2;i++)c.drawLine(rect.right-(2+3*i)*d,rect.top+(4-i)*d,rect.right-(2+3*i)*d,rect.bottom-(4-i)*d,p);
+        }
+        p.setStyle(Paint.Style.FILL);c.restoreToCount(layer);
+    }
+    private static int mix(int a,int b,float t){return Color.argb(Color.alpha(a),Math.round(Color.red(a)*(1-t)+Color.red(b)*t),Math.round(Color.green(a)*(1-t)+Color.green(b)*t),Math.round(Color.blue(a)*(1-t)+Color.blue(b)*t));}
+    @Override public void setAlpha(int alpha){drawableAlpha=Math.max(0,Math.min(255,alpha));invalidateSelf();}
+    @Override public void setColorFilter(ColorFilter filter){p.setColorFilter(filter);}
+    @Override public int getOpacity(){return PixelFormat.TRANSLUCENT;}
+}

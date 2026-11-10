@@ -1,0 +1,31 @@
+Nth Desktop XP 0.1.0 — build and verification
+Date: 2026-11-10
+
+Foundation: bdredenbach/Windows-Seven-Style-Android-Launcher
+Pinned foundation commit: d4aa956cd1b1c32e834c46a89b0908d7e775e475
+Unique XP package: com.nthexperience.desktop.xp
+Version: 0.1.0 (1), min SDK 26, target/compile SDK 36
+Build: Java 17, Gradle 8.13, Android Gradle Plugin 8.13.2
+
+COMPLETED
+- :app:assembleDebug
+- :app:assembleDebugAndroidTest
+- :app:testDebugUnitTest — 89 tests, 0 failures
+- Real MainActivity rendered with Robolectric API 35 native graphics: 6 schemes x 2 orientations x Start/Explorer/Display = 36 review images
+- Visual review of portrait Start, Explorer, Display Properties, Silver caption controls, Classic controls and landscape Start
+- APK package/minimum/target checks using aapt
+- APK signature verification: v2 signature, one signer
+- git diff --check
+
+NOT COMPLETED
+- Actual installed-app instrumentation. Android 11 software emulator booted, but adb streamed install failed at Android's package service with: cmd: Failure calling service package: Broken pipe (32).
+- No claim of on-device, Android 16 emulator or numeric visual-fidelity certification.
+- The repository workflow prepares Android 11 and 16 native runs; these new workflow jobs have not been run on GitHub.
+
+NEXT FIDELITY PASS
+- Compare with recorded XP operation; refine hover cascades and explorer toolbar/address layout.
+- Reshape browser, media controls, Task Manager, system dialogs, calendar and remaining shared utilities.
+- Continue onboarding and larger-text/permission recovery checks on a physical Pixel.
+
+APK SHA-256: 088d060df7f1d52b37b72dcabd3c04b8ef3a8e98278eddde65d84c2879821f5f
+Preview signing key checkpoint: Nth-Desktop-XP-Preview-Signing.zip (kept separately; excluded from source).

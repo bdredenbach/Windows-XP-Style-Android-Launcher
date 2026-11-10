@@ -1,0 +1,114 @@
+{
+  "archive": "windows-xp-desktop.zip",
+  "source": "https://www.rw-designer.com/icon-set/windows-xp-desktop",
+  "license_as_declared_in_supplied_readme": "Released to Public Domain",
+  "icons": [
+    {
+      "source": "My computer.ico",
+      "kind": "computer",
+      "sha256": "d40798e3f8df90a8ab6824ee776cbfc63da9a36dac2200961283982a3ba352a3",
+      "sizes": [
+        [
+          16,
+          16
+        ],
+        [
+          24,
+          24
+        ],
+        [
+          32,
+          32
+        ],
+        [
+          48,
+          48
+        ]
+      ]
+    },
+    {
+      "source": "Network.ico",
+      "kind": "network",
+      "sha256": "9fc724ed6010388d877d2a67c34aef42ece0b8dd283bb6368c600a8a9c5b7f35",
+      "sizes": [
+        [
+          16,
+          16
+        ],
+        [
+          24,
+          24
+        ],
+        [
+          32,
+          32
+        ],
+        [
+          48,
+          48
+        ]
+      ]
+    },
+    {
+      "source": "Documents.ico",
+      "kind": "documents",
+      "sha256": "598420524aa525cf474cf54575c04bee0abff10a2b7f11e65a5419aee4273c87",
+      "sizes": [
+        [
+          16,
+          16
+        ],
+        [
+          24,
+          24
+        ],
+        [
+          32,
+          32
+        ],
+        [
+          48,
+          48
+        ]
+      ]
+    },
+    {
+      "source": "Empty Recycle Bin.ico",
+      "kind": "recycle",
+      "sha256": "292b9ff2a4d7af9fadf8599cd4ab1b8e7a05a79ab6a8210bee76dd14f9bd9018",
+      "sizes": [
+        [
+          16,
+          16
+        ],
+        [
+          32,
+          32
+        ],
+        [
+          48,
+          48
+        ]
+      ]
+    },
+    {
+      "source": "Full Recycle Bin.ico",
+      "kind": "recycle-full",
+      "sha256": "f2c2e73212c636ea388d08c88bf999e859b3030bf002977c222f453c33bcda74",
+      "sizes": [
+        [
+          16,
+          16
+        ],
+        [
+          32,
+          32
+        ],
+        [
+          48,
+          48
+        ]
+      ]
+    }
+  ]
+}

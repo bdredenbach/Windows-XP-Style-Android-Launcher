@@ -1,0 +1,165 @@
+package com.nthexperience.desktop;
+
+import android.content.*;
+import android.net.Uri;
+import android.provider.DocumentsContract;
+import android.util.AtomicFile;
+import org.json.*;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.charset.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+/** Versioned settings-only backup. Validation completes before any live preferences change. */
+final class DesktopBackup {
+    static final int MAX_BYTES=8*1024*1024;
+    static final String FORMAT="nth-desktop-backup";
+    static final String VARIANT="xp";
+    static final String PENDING="desktop-restore-preview.json", UNDO="desktop-before-restore.json", EXPORT="desktop-export.json";
+    private static final Set<String> BOOLEANS=new HashSet<>(Arrays.asList("desktop_recycle_added",DesktopBackgrounds.SHUFFLE,"seven_taskbar_grouping_set","explorer_menu_bar","control_panel_small_icons","taskmanager_animate","tray_expanded","tray_battery","tray_network","tray_volume","tray_brightness","desktop_sounds","sound_complete","sound_error","sound_notice","recent_items_enabled","taskbar_previews","taskbar_static","taskbar_expanded","taskbar_show_labels","explorer_thumbnails","explorer_navigation","desktop_labels","explorer_hidden","sidebar_always_top","taskbar_apps","weather_follow","aero_transparency","startup_sound","reduce_motion","welcome_on_start","clock_seconds","layout_locked","show_status_bar","snap_gadgets","snap_desktop","weather_f","control_panel_classic","explorer_details","sidebar_visible","desktop_v41"));
+    private static final Set<String> INTS=new HashSet<>(Arrays.asList(XpTheme.KEY,"wallpaper_bg",DesktopBackgrounds.INTERVAL,"recycle_capacity_mb","desktop_icon_percent","desktop_label_size","desktop_spacing_x","desktop_spacing_y","desktop_columns_portrait","desktop_columns_landscape","desktop_rows_portrait","desktop_rows_landscape","desktop_sound_volume","wallpaper","clock_style","desktop_icon_size","aero_color","aero_intensity","aero_opacity","startup_mode"));
+    private static final Set<String> STRINGS=new HashSet<>(Arrays.asList(DesktopSounds.SCHEME,TaskbarOrder.KEY,TaskbarRows.KEY,TaskbarRows.LEGACY_KEY,"folder_links",LibraryLocations.KEY,ThemeProfiles.KEY,"taskbar_grouping","wallpaper_photo","wallpaper_position",DesktopBackgrounds.SLIDES,"workspace_presets","shortcut_folder_view","explorer_view_mode","explorer_searches","explorer_folder_views","start_pins","shortcuts","quick_launch","app_folders","shortcut_names","gadgets","file_manager_apps","gadget_photos","recents","linked_folders","gadget_layout_portrait","gadget_layout_landscape","note","gadget_note","profile_portrait","linked_files","desktop_name","weather_city","weather_lat","weather_lon","gadget_data","feed_url","explorer_favorites","desktop_positions_portrait","desktop_positions_landscape"));
+    private static final Set<String> BUILTINS=new HashSet<>(Arrays.asList("@computer","@browser","@photos",MediaLibrary.PLAYER,MediaLibrary.CENTER,"@documents","@files","@notes","@appearance","@control","@system","@filemanagers","@gadgets","@sticky","@calendar","@clock","@weather","@pictures","@music","@organize","@quicklaunch","@backup","@welcome","@taskmanager","@recycle","@workspaces","@recent","@actioncenter"));
+    static final class Plan {
+        final Map<String,Object> values;
+        final String text,created;
+        final int skipped;
+        final List<String> skippedItems;
+        final boolean partial;
+        Plan(Map<String,Object> values,String text,String created,Set<String> skipped,boolean partial){this.values=Collections.unmodifiableMap(values);this.text=text;this.created=created;this.skipped=skipped.size();this.skippedItems=Collections.unmodifiableList(new ArrayList<>(skipped));this.partial=partial;}
+        String string(String key,String fallback){Object value=values.get(key);return value instanceof String?(String)value:fallback;}
+        int count(String key){try{return new JSONArray(string(key,"[]")).length();}catch(JSONException ex){return 0;}}
+        int folders(){try{return new JSONObject(string("app_folders","{}")).length();}catch(JSONException ex){return 0;}}
+        int relinks(Context context){int missing=0;try{JSONArray links=new JSONArray(string("linked_folders","[]"));for(int i=0;i<links.length();i++){Uri uri=Uri.parse(links.getJSONObject(i).getString("uri"));boolean granted=false;for(android.content.UriPermission p:context.getContentResolver().getPersistedUriPermissions())if(p.isReadPermission()&&p.getUri().equals(uri))granted=true;if(!granted)missing++;}JSONArray files=new JSONArray(string("linked_files","[]"));for(int i=0;i<files.length();i++){Uri uri=Uri.parse(files.getJSONObject(i).getString("uri"));boolean granted=false;for(android.content.UriPermission p:context.getContentResolver().getPersistedUriPermissions())if(p.isReadPermission()&&p.getUri().equals(uri))granted=true;if(!granted)missing++;}}catch(JSONException ignored){}return missing;}
+    }
+    static JSONObject snapshot(DesktopStore store)throws JSONException {
+        Map<String,Object> values=new LinkedHashMap<>(store.prefs.getAll());values.put("gadget_data",GadgetData.portable(store).toString());
+        if(values.containsKey(TaskbarRows.LEGACY_KEY)){
+            Object legacy=values.remove(TaskbarRows.LEGACY_KEY);
+            if(!(legacy instanceof String))throw new JSONException("Invalid legacy taskbar rows");
+            TaskbarRows.parse((String)legacy);values.putIfAbsent(TaskbarRows.KEY,legacy);
+        }
+        values.put("shortcuts",new JSONArray(store.desktop()).toString());values.put("quick_launch",new JSONArray(store.quickLaunch()).toString());values.put("app_folders",store.folders().toString());
+        values.putIfAbsent("shortcut_names","{}");values.put("gadgets",new JSONArray(store.gadgets()).toString());values.put("file_manager_apps",new JSONArray(store.fileManagers()).toString());values.put("gadget_photos",new JSONArray(store.photos()).toString());values.put("recents",new JSONArray(store.recents()).toString());values.putIfAbsent("linked_folders","[]");values.putIfAbsent("note","");values.putIfAbsent("gadget_note","");
+        values.putIfAbsent("gadget_layout_portrait",values.getOrDefault("gadget_layout_landscape","{}"));values.putIfAbsent("gadget_layout_landscape",values.getOrDefault("gadget_layout_portrait","{}"));
+        for(String key:Arrays.asList("desktop_positions_portrait","desktop_positions_landscape"))if(values.containsKey(key)){JSONObject points=object((String)values.get(key));Iterator<String> ids=points.keys();while(ids.hasNext())if(!store.desktop().contains(ids.next()))ids.remove();values.put(key,points.toString());}
+        JSONObject settings=new JSONObject();for(Map.Entry<String,Object> entry:values.entrySet()){
+            String key=entry.getKey(),kind=kind(key);if(kind==null)continue;Object value=entry.getValue();if(value==null)continue;
+            JSONObject field=new JSONObject().put("type",kind).put("value",value);settings.put(key,field);
+        }
+        return new JSONObject().put("format",FORMAT).put("version",1).put("variant",VARIANT).put("wallpapers",new JSONArray(Arrays.asList(BackupCompatibility.WALLPAPERS))).put("appVersion",AppInfo.version(store.context)).put("createdAt",new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX",Locale.US).format(new Date())).put("settings",settings);
+    }
+    static Plan parse(String text)throws JSONException {
+        if(text.getBytes(StandardCharsets.UTF_8).length>MAX_BYTES)throw new JSONException("Backup is larger than 8 MB");
+        checkDepth(text);JSONTokener reader=new JSONTokener(text);Object root=reader.nextValue();if(!(root instanceof JSONObject)||reader.nextClean()!=0)throw new JSONException("Choose a complete Nth Desktop backup");JSONObject object=(JSONObject)root;
+        if((!FORMAT.equals(object.opt("format"))&&!"nth-desktop-eight-backup".equals(object.opt("format")))||!integer(object.opt("version"))||((Number)object.get("version")).intValue()!=1)throw new JSONException("This backup format or version is not supported");
+        JSONObject settings=object.getJSONObject("settings");if(settings.length()>512)throw new JSONException("Too many settings in this backup");Map<String,Object> values=new LinkedHashMap<>();Set<String> skipped=new LinkedHashSet<>();boolean compatible=!VARIANT.equals(object.optString("variant"));
+        Iterator<String> keys=settings.keys();while(keys.hasNext()){
+            String key=keys.next(),expected=kind(key);if(expected==null){skipped.add(key);continue;}JSONObject field=settings.getJSONObject(key);if(!expected.equals(field.opt("type")))throw new JSONException("Wrong setting type: "+key);Object value=field.get("value");
+            if(expected.equals("boolean")){if(!(value instanceof Boolean))throw new JSONException("Invalid switch: "+key);}
+            else if(expected.equals("int")){if(!integer(value))throw new JSONException("Invalid number: "+key);int n=((Number)value).intValue();if(!(compatible&&key.equals("wallpaper"))&&(n<minimum(key)||n>maximum(key)))throw new JSONException("Setting out of range: "+key);value=n;}
+            else{if(!(value instanceof String))throw new JSONException("Invalid text: "+key);int limit=key.equals("note")||key.equals("gadget_note")?2*1024*1024:512*1024;if(((String)value).length()>limit)throw new JSONException("Setting too large: "+key);}
+            values.put(key,value);
+        }
+        if(values.containsKey(TaskbarRows.LEGACY_KEY)){
+            TaskbarRows.parse((String)values.get(TaskbarRows.LEGACY_KEY));
+            if(!values.containsKey(TaskbarRows.KEY))values.put(TaskbarRows.KEY,values.get(TaskbarRows.LEGACY_KEY));
+            values.remove(TaskbarRows.LEGACY_KEY);
+        }
+        for(String key:Arrays.asList("shortcuts","quick_launch","app_folders","shortcut_names","gadgets","file_manager_apps","gadget_photos","linked_folders","note","gadget_note","gadget_layout_portrait","gadget_layout_landscape"))if(!values.containsKey(key))throw new JSONException("Incomplete backup: "+key);
+        if(compatible){
+            BackupCompatibility.normalize(values,object,skipped);
+            Map<String,Object> accepted=new LinkedHashMap<>();
+            for(String key:Arrays.asList("shortcuts", "quick_launch", "app_folders", "shortcut_names", "gadgets", "file_manager_apps", "gadget_photos", "linked_folders", "note", "gadget_note", "gadget_layout_portrait", "gadget_layout_landscape"))accepted.put(key,values.get(key));
+            validate(accepted);
+            List<String> optional=new ArrayList<>(values.keySet());optional.removeAll(accepted.keySet());Collections.sort(optional);
+            // Desktop membership and private drafts depend on the desktop metadata.
+            for(String key:Arrays.asList("eight_web_tiles","ten_desktop_items","ten_desktops"))if(optional.remove(key))optional.add(0,key);
+            if(optional.remove("ten_desktops"))optional.add(0,"ten_desktops");
+            for(String key:optional){accepted.put(key,values.get(key));try{validate(accepted);}catch(JSONException incompatible){accepted.remove(key);skipped.add(key+" (not supported by this desktop)");}}
+            values=accepted;
+        }else validate(values);
+        String created=object.optString("createdAt","Unknown date");if(created.length()>64)created="Unknown date";
+        return new Plan(values,text,created,skipped,compatible||!skipped.isEmpty());
+    }
+    private static int minimum(String key){if(key.equals("recycle_capacity_mb"))return 100;return key.equals("desktop_icon_percent")?60:key.equals("desktop_label_size")?10:0;}
+    private static int maximum(String key){if(key.equals(XpTheme.KEY))return XpTheme.NAMES.length-1;if(key.equals("wallpaper"))return DesktopBackgrounds.NAMES.length-1;if(key.equals(DesktopBackgrounds.INTERVAL))return 86400;if(key.equals("wallpaper_bg"))return 5;if(key.equals("recycle_capacity_mb"))return 2048;if(key.equals("desktop_sound_volume"))return 100;if(key.equals("desktop_icon_percent"))return 150;if(key.equals("desktop_label_size"))return 16;if(key.startsWith("desktop_spacing_"))return 24;if(key.startsWith("desktop_columns_"))return 10;if(key.startsWith("desktop_rows_"))return 16;return key.equals("aero_color")?7:(key.equals("aero_intensity")||key.equals("aero_opacity"))?100:key.equals("clock_style")?1:2;}
+    private static String kind(String key){if(BOOLEANS.contains(key))return "boolean";if(INTS.contains(key))return "int";if(STRINGS.contains(key)||((key.startsWith("window_portrait_")||key.startsWith("window_landscape_"))&&key.length()<550))return "string";return null;}
+    private static boolean integer(Object value){return value instanceof Number&&Double.isFinite(((Number)value).doubleValue())&&((Number)value).doubleValue()==((Number)value).intValue();}
+    private static boolean folderId(String id){if(!id.startsWith("folder:"))return false;try{UUID.fromString(id.substring(7));return true;}catch(IllegalArgumentException ex){return false;}}
+    static boolean shortcut(String id,JSONObject folders,boolean allowFolder){if(FolderLinks.id(id))return true;return id!=null&&id.length()<=512&&(BUILTINS.contains(id)||(id.startsWith("@gadget:")&&GadgetCatalog.extra(id.substring(8)))||(allowFolder&&folderId(id)&&folders.has(id))||(!id.startsWith("@")&&!id.startsWith("folder:")&&ComponentName.unflattenFromString(id)!=null));}
+    private static List<String> ids(Object raw,int limit)throws JSONException{if(!(raw instanceof JSONArray))throw new JSONException("Expected a shortcut list");JSONArray list=(JSONArray)raw;if(list.length()>limit)throw new JSONException("Shortcut list is too large");List<String> result=new ArrayList<>();for(int i=0;i<list.length();i++){Object value=list.get(i);if(!(value instanceof String)||result.contains(value))throw new JSONException("Invalid or duplicate list item");result.add((String)value);}return result;}
+    private static void validate(Map<String,Object> values)throws JSONException {
+        if(values.containsKey("shortcut_folder_view")&&!Arrays.asList("Large icons","Medium icons","Small icons","List","Details").contains(values.get("shortcut_folder_view")))throw new JSONException("Invalid shortcut folder view");
+        JSONObject folders=object((String)values.get("app_folders"));if(folders.length()>DesktopStore.MAX_FOLDERS)throw new JSONException("Too many app folders");
+        Iterator<String> names=folders.keys();while(names.hasNext()){String id=names.next();JSONObject folder=folders.getJSONObject(id);if(!folderId(id))throw new JSONException("Invalid app folder identifier");checkName(folder.get("name"));for(String child:ids(folder.get("items"),DesktopStore.MAX_ITEMS))if(!shortcut(child,folders,false))throw new JSONException("Invalid or nested folder item");}
+        for(String key:Arrays.asList("shortcuts","quick_launch","file_manager_apps","recents"))if(values.containsKey(key))for(String id:ids(array((String)values.get(key)),key.equals("quick_launch")?DesktopStore.MAX_QUICK:key.equals("recents")?4:512))if(!shortcut(id,folders,!key.equals("file_manager_apps")&&!key.equals("recents")))throw new JSONException("Invalid shortcut in "+key);
+        JSONObject aliases=object((String)values.get("shortcut_names"));if(aliases.length()>2048)throw new JSONException("Too many renamed shortcuts");names=aliases.keys();while(names.hasNext()){String id=names.next();if(!shortcut(id,folders,true))throw new JSONException("Invalid renamed shortcut");checkName(aliases.get(id));}
+        for(String gadget:ids(array((String)values.get("gadgets")),GadgetCatalog.IDS.length))if(!Arrays.asList(GadgetView.IDS).contains(gadget))throw new JSONException("Unknown gadget");
+        for(String photo:ids(array((String)values.get("gadget_photos")),100))if(!"content".equals(Uri.parse(photo).getScheme()))throw new JSONException("Invalid photo reference");
+        JSONArray links=array((String)values.get("linked_folders"));if(links.length()>16)throw new JSONException("Too many linked folders");for(int i=0;i<links.length();i++){JSONObject link=links.getJSONObject(i);Object uri=link.get("uri"),name=link.get("name");if(!(uri instanceof String)||((String)uri).length()>8192||!"content".equals(Uri.parse((String)uri).getScheme())||!DocumentsContract.isTreeUri(Uri.parse((String)uri))||!(name instanceof String)||((String)name).length()>512)throw new JSONException("Invalid linked folder");}
+        if(values.containsKey("explorer_favorites")){JSONObject favoriteFolders=object((String)values.get("explorer_favorites"));if(favoriteFolders.length()>5)throw new JSONException("Too many favorite folders");Iterator<String> keys=favoriteFolders.keys();while(keys.hasNext()){String key=keys.next();if(!Arrays.asList("documents","pictures","music","videos","downloads").contains(key)||!(favoriteFolders.get(key) instanceof String)||!"content".equals(Uri.parse(favoriteFolders.getString(key)).getScheme())||!android.provider.DocumentsContract.isTreeUri(Uri.parse(favoriteFolders.getString(key))))throw new JSONException("Invalid favorite folder");}}
+        if(values.containsKey("start_pins"))for(String id:ids(array((String)values.get("start_pins")),32))if(!shortcut(id,folders,true))throw new JSONException("Invalid Start pin");
+        if(values.containsKey("explorer_view_mode")&&!Arrays.asList("Details","Tiles","List","Large icons","Medium icons","Small icons").contains(values.get("explorer_view_mode")))throw new JSONException("Invalid Explorer view");
+        if(values.containsKey("explorer_folder_views")){JSONObject styles=object((String)values.get("explorer_folder_views"));if(styles.length()>64)throw new JSONException("Too many folder views");Iterator<String> foldersWithStyles=styles.keys();while(foldersWithStyles.hasNext()){String uri=foldersWithStyles.next();if(uri.length()>8192||!"content".equals(Uri.parse(uri).getScheme()))throw new JSONException("Invalid folder view location");explorerStyle(styles.getJSONObject(uri));}}
+        if(values.containsKey(ThemeProfiles.KEY))ThemeProfiles.validateList(array((String)values.get(ThemeProfiles.KEY)));
+        if(values.containsKey(LibraryLocations.KEY))LibraryLocations.validate(object((String)values.get(LibraryLocations.KEY)));
+        if(values.containsKey("folder_links"))FolderLinks.validate((String)values.get("folder_links"));
+        if(values.containsKey(DesktopSounds.SCHEME)&&!SoundSchemes.valid((String)values.get(DesktopSounds.SCHEME)))throw new JSONException("Invalid sound scheme");
+        if(values.containsKey(TaskbarOrder.KEY)){
+            JSONArray order=array((String)values.get(TaskbarOrder.KEY));Set<String> seen=new HashSet<>();
+            if(order.length()>TaskbarOrder.LIMIT)throw new JSONException("Too many taskbar items");
+            for(int i=0;i<order.length();i++){Object id=order.get(i);if(!(id instanceof String)||!TaskbarOrder.valid((String)id)||!seen.add((String)id))throw new JSONException("Invalid taskbar order");}
+        }
+        if(values.containsKey(TaskbarRows.KEY))TaskbarRows.parse((String)values.get(TaskbarRows.KEY));
+        if(values.containsKey("taskbar_grouping")&&!Arrays.asList("Never","When full","Always").contains(values.get("taskbar_grouping")))throw new JSONException("Invalid taskbar grouping");
+        if(values.containsKey(DesktopBackgrounds.SLIDES))DesktopBackgrounds.parse((String)values.get(DesktopBackgrounds.SLIDES));
+        if(values.containsKey(DesktopBackgrounds.INTERVAL)&&!DesktopBackgrounds.intervalValid((Integer)values.get(DesktopBackgrounds.INTERVAL)))throw new JSONException("Invalid background interval");
+        if(values.containsKey("wallpaper_position")&&!Arrays.asList("Fill","Fit","Stretch","Tile","Center").contains(values.get("wallpaper_position")))throw new JSONException("Invalid wallpaper position");
+        if(values.containsKey("wallpaper_photo")){String uri=(String)values.get("wallpaper_photo");if(!uri.isEmpty()&&(uri.length()>8192||!"content".equals(Uri.parse(uri).getScheme())))throw new JSONException("Invalid wallpaper photo");}
+        if(values.containsKey("workspace_presets"))WorkspacePresets.validate((String)values.get("workspace_presets"));
+        if(values.containsKey("explorer_searches")){JSONArray searches=array((String)values.get("explorer_searches"));if(searches.length()>16)throw new JSONException("Too many saved searches");for(int i=0;i<searches.length();i++){JSONObject search=searches.getJSONObject(i);checkName(search.get("name"));if(!(search.get("query") instanceof String)||search.getString("query").length()>512||!(search.get("recent") instanceof Boolean))throw new JSONException("Invalid saved search");String page=search.getString("page");if(page.length()>24000||!page.startsWith("folder:"))throw new JSONException("Invalid saved search folder");JSONObject path=DocumentFolders.path(page);String tree=path.getString("tree");if(tree.length()>8192||!"content".equals(Uri.parse(tree).getScheme())||!DocumentsContract.isTreeUri(Uri.parse(tree)))throw new JSONException("Invalid saved search access");JSONArray crumbs=path.getJSONArray("crumbs");if(crumbs.length()<1||crumbs.length()>64)throw new JSONException("Invalid saved search path");for(int n=0;n<crumbs.length();n++){JSONObject crumb=crumbs.getJSONObject(n);if(crumb.getString("id").length()>8192||crumb.getString("name").length()>512)throw new JSONException("Invalid saved search segment");}}}
+        if(values.containsKey("gadget_data"))GadgetData.validate(object((String)values.get("gadget_data")));
+        if(values.containsKey("feed_url")&&!((String)values.get("feed_url")).isEmpty()&&!FeedClient.validUrl((String)values.get("feed_url")))throw new JSONException("Invalid feed URL");
+        if(values.containsKey("profile_portrait")&&!ProfilePortrait.valid((String)values.get("profile_portrait")))throw new JSONException("Invalid profile picture");
+        if(values.containsKey("linked_files"))LinkedFiles.validate(array((String)values.get("linked_files")));
+        for(String key:new ArrayList<>(values.keySet())){
+            if(key.equals("desktop_positions_portrait")||key.equals("desktop_positions_landscape")){JSONObject points=object((String)values.get(key));if(points.length()>512)throw new JSONException("Too many desktop positions");Iterator<String> ids=points.keys();while(ids.hasNext()){String id=ids.next();if(!shortcut(id,folders,true))throw new JSONException("Invalid positioned shortcut");JSONObject point=points.getJSONObject(id);number(point.get("x"),0,1);number(point.get("y"),0,60000);}}
+            else if(key.equals("gadget_layout_portrait")||key.equals("gadget_layout_landscape"))layout(object((String)values.get(key)));
+            else if(key.startsWith("window_portrait_")||key.startsWith("window_landscape_")){JSONObject geometry=object((String)values.get(key));for(String n:Arrays.asList("x","y","w","h"))if(geometry.has(n))number(geometry.get(n),0,n.equals("x")||n.equals("y")?1:2000);if(geometry.has("maximized")&&!(geometry.get("maximized") instanceof Boolean))throw new JSONException("Invalid window state");}
+            else if(key.equals("desktop_name"))checkName(values.get(key));
+        }
+        for(String key:Arrays.asList("weather_lat","weather_lon"))if(values.containsKey(key)){try{double value=Double.parseDouble((String)values.get(key));if(!Double.isFinite(value)||Math.abs(value)>(key.equals("weather_lat")?90:180))throw new NumberFormatException();}catch(NumberFormatException ex){throw new JSONException("Invalid weather coordinates");}}
+    }
+    private static void explorerStyle(JSONObject style)throws JSONException{if(!Arrays.asList("Details","Tiles","List","Large icons","Medium icons","Small icons").contains(style.getString("view"))||!Arrays.asList("Name","Date modified","Type","Size").contains(style.getString("sort"))||!Arrays.asList("None","Name","Date modified","Type","Size").contains(style.getString("group"))||!(style.get("descending") instanceof Boolean))throw new JSONException("Invalid folder view");}
+    private static void layout(JSONObject layout)throws JSONException {Iterator<String> keys=layout.keys();while(keys.hasNext()){String key=keys.next();if(key.equals("visible")){if(!(layout.get(key) instanceof Boolean))throw new JSONException("Invalid sidebar setting");}else if(key.equals("order")){for(String id:ids(layout.get(key),GadgetCatalog.IDS.length))if(!Arrays.asList(GadgetView.IDS).contains(id))throw new JSONException("Invalid gadget order");}else{if(!Arrays.asList(GadgetView.IDS).contains(key))throw new JSONException("Invalid gadget layout");JSONObject p=layout.getJSONObject(key);for(String n:Arrays.asList("x","y"))if(p.has(n))number(p.get(n),0,1);if(p.has("scale"))number(p.get("scale"),.65,1.8);if(p.has("docked")&&!(p.get("docked") instanceof Boolean))throw new JSONException("Invalid gadget placement");}}}
+    static void checkDepth(String text)throws JSONException {int depth=0;boolean quoted=false,escape=false;for(int i=0;i<text.length();i++){char ch=text.charAt(i);if(quoted){if(escape)escape=false;else if(ch=='\\')escape=true;else if(ch=='"')quoted=false;}else if(ch=='"')quoted=true;else if(ch=='{'||ch=='['){if(++depth>64)throw new JSONException("Backup nesting is too deep");}else if(ch=='}'||ch==']')depth--;}}
+    private static Object structured(String text)throws JSONException {checkDepth(text);JSONTokener reader=new JSONTokener(text);Object value=reader.nextValue();if(reader.nextClean()!=0)throw new JSONException("Unexpected data after a backup setting");return value;}
+    private static JSONObject object(String text)throws JSONException {Object value=structured(text);if(!(value instanceof JSONObject))throw new JSONException("Expected a settings object");return (JSONObject)value;}
+    private static JSONArray array(String text)throws JSONException {Object value=structured(text);if(!(value instanceof JSONArray))throw new JSONException("Expected a settings list");return (JSONArray)value;}
+    private static void number(Object value,double low,double high)throws JSONException{if(!(value instanceof Number)||!Double.isFinite(((Number)value).doubleValue())||((Number)value).doubleValue()<low-.00001||((Number)value).doubleValue()>high+.00001)throw new JSONException("Layout value out of range");}
+    private static void checkName(Object value)throws JSONException{if(!(value instanceof String)||((String)value).isEmpty()||!value.equals(DesktopStore.cleanName((String)value)))throw new JSONException("Invalid shortcut or desktop name");}
+    static String read(InputStream input)throws IOException{if(input==null)throw new IOException("The file could not be opened");try(InputStream stream=input;ByteArrayOutputStream bytes=new ByteArrayOutputStream()){byte[] buffer=new byte[8192];int n;while((n=stream.read(buffer))!=-1){if(bytes.size()+n>MAX_BYTES)throw new IOException("Choose a backup smaller than 8 MB");bytes.write(buffer,0,n);}try{return StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes.toByteArray())).toString();}catch(CharacterCodingException ex){throw new IOException("This backup is not valid UTF-8",ex);}}}
+    static File file(Context context,String name){return new File(context.getFilesDir(),name);}
+    static void stage(Context context,String name,String text)throws IOException{byte[] bytes=text.getBytes(StandardCharsets.UTF_8);if(bytes.length>MAX_BYTES)throw new IOException("Backup is larger than 8 MB");AtomicFile file=new AtomicFile(file(context,name));FileOutputStream stream=null;try{stream=file.startWrite();stream.write(bytes);file.finishWrite(stream);}catch(IOException ex){if(stream!=null)file.failWrite(stream);throw ex;}}
+    static Plan staged(Context context,String name)throws IOException,JSONException{return parse(read(new AtomicFile(file(context,name)).openRead()));}
+    static void discard(Context context,String name){new AtomicFile(file(context,name)).delete();}
+    static void apply(Context context,DesktopStore store,Plan plan,boolean undo)throws IOException,JSONException{
+        Map<String,?> old=new LinkedHashMap<>(store.prefs.getAll());if(!undo)stage(context,UNDO,snapshot(store).toString());
+        SharedPreferences.Editor edit=store.prefs.edit();if(!plan.partial)edit.clear();
+        if(plan.partial&&plan.values.containsKey("ten_desktops"))for(String dependent:Arrays.asList("ten_desktop_items","eleven_nota_drafts","ten_nota_windows"))if(!plan.values.containsKey(dependent))edit.remove(dependent);
+        if(plan.partial&&plan.values.containsKey("shortcuts")&&!plan.values.containsKey("ten_desktop_items")&&!plan.values.containsKey("ten_desktops")&&store.prefs.contains("ten_desktop_items")){
+            JSONObject metadata=new JSONObject(store.prefs.getString("ten_desktops","{}")),banks=new JSONObject(store.prefs.getString("ten_desktop_items","{}"));
+            String first=metadata.getJSONArray("desktops").getJSONObject(0).getString("id");JSONObject bank=banks.getJSONObject(first);JSONArray restored=new JSONArray(plan.string("shortcuts","[]"));bank.put("shortcuts",restored);
+            for(String axis:Arrays.asList("portrait","landscape")){String positions="desktop_positions_"+axis;JSONObject points=plan.values.containsKey(positions)?new JSONObject(plan.string(positions,"{}")):bank.optJSONObject(axis);if(points==null)points=new JSONObject();Set<String> icons=new HashSet<>();for(int i=0;i<restored.length();i++)icons.add(restored.getString(i));Iterator<String> ids=points.keys();while(ids.hasNext())if(!icons.contains(ids.next()))ids.remove();bank.put(axis,points);}
+            edit.putString("ten_desktop_items",banks.toString());
+        }
+        for(Map.Entry<String,Object> e:plan.values.entrySet())put(edit,e.getKey(),e.getValue());edit.putBoolean("desktop_v41",true);
+        if(!edit.commit()){SharedPreferences.Editor rollback=store.prefs.edit().clear();for(Map.Entry<String,?> e:old.entrySet())put(rollback,e.getKey(),e.getValue());rollback.commit();throw new IOException("The desktop could not be saved. Your previous setup was kept.");}
+        InitializationState.restored(context);
+        discard(context,PENDING);if(undo)discard(context,UNDO);
+    }
+    private static void put(SharedPreferences.Editor edit,String key,Object value){if(value instanceof Boolean)edit.putBoolean(key,(Boolean)value);else if(value instanceof Integer)edit.putInt(key,(Integer)value);else if(value instanceof Long)edit.putLong(key,(Long)value);else if(value instanceof Float)edit.putFloat(key,(Float)value);else if(value instanceof String)edit.putString(key,(String)value);}
+    private DesktopBackup(){}
+}
