@@ -19,16 +19,61 @@ final class WindowPreviews {
         if(windows.size()>1)button.setOnClickListener(v->{dismiss();groupMenu=new DesktopContextMenu(activity,"Grouped tasks");for(DesktopWindow window:windows)if(window.getParent()!=null)groupMenu.item(window.caption(),"files",window::restore);ContextMenus.centered(button,(x,y)->ContextMenus.show(groupMenu,button,x,y));});
     }
     void bindApp(View button,String title,boolean running,boolean mouse,Runnable open,Runnable commands){button.setOnHoverListener(null);button.setOnLongClickListener(v->{commands.run();return true;});}
-    void show(){
-        dismiss();host.preparePreview();((InputMethodManager)activity.getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(activity.getWindow().getDecorView().getWindowToken(),0);
-        LinearLayout shell=Aero.column(activity);shell.setPadding(dp(4),dp(4),dp(4),dp(4));shell.setBackground(XpTheme.chrome(activity,AeroGlass.WINDOW));TextView caption=Aero.text(activity,"Switch Programs",12,XpTheme.titleInk(activity));Aero.bold(caption);caption.setPadding(dp(7),0,0,0);caption.setGravity(Gravity.CENTER_VERTICAL);shell.addView(caption,new LinearLayout.LayoutParams(-1,dp(27)));
-        LinearLayout body=Aero.column(activity);body.setPadding(dp(12),dp(12),dp(12),dp(9));body.setBackgroundColor(XpTheme.surface(activity));shell.addView(body);GridLayout icons=new GridLayout(activity);icons.setColumnCount(4);icons.setContentDescription("XP program switcher");body.addView(icons);
-        for(DesktopWindow window:host.windows())if(window.getParent()!=null)add(icons,window.caption(),window.toolId,()->{dismiss();window.restore();});for(String id:host.external())add(icons,host.label(id),id,()->{dismiss();host.open(id);});
-        if(icons.getChildCount()==0)body.addView(Aero.text(activity,"No open programs",12,Aero.INK));body.addView(Aero.button(activity,"Cancel",this::dismiss),new LinearLayout.LayoutParams(-1,dp(32)));
-        dialog=new Dialog(activity);dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);dialog.setContentView(shell);dialog.show();if(dialog.getWindow()!=null){dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);dialog.getWindow().setLayout(Math.min(dp(354),activity.getResources().getDisplayMetrics().widthPixels-dp(24)),-2);}
+    private final List<Choice> choices=new ArrayList<>();
+    private final List<View> cells=new ArrayList<>();
+    private TextView selectedTitle;
+    private int selected;
+    private boolean keyboard;
+    private static final class Choice {
+        final String title,id;final Runnable activate;
+        Choice(String title,String id,Runnable activate){this.title=title;this.id=id;this.activate=activate;}
     }
-    private void add(GridLayout icons,String title,String id,Runnable click){LinearLayout item=Aero.column(activity);item.setGravity(Gravity.CENTER);item.setPadding(dp(4),dp(7),dp(4),dp(7));item.setFocusable(true);item.setBackground(XpControls.menuSelection(activity));item.setContentDescription("Switch to "+title);item.addView(new AeroIcon(activity,id.equals("@taskmanager")?"taskmanager":id.equals("@browser")?"browser":id.equals("@notes")?"notes":"files"),new LinearLayout.LayoutParams(dp(32),dp(32)));TextView label=Aero.text(activity,title,10,Aero.INK);label.setTextColor(XpControls.menuInk(Aero.INK));label.setDuplicateParentStateEnabled(true);label.setGravity(Gravity.CENTER);label.setMaxLines(2);label.setEllipsize(android.text.TextUtils.TruncateAt.END);item.addView(label,new LinearLayout.LayoutParams(-1,dp(30)));item.setOnClickListener(v->click.run());GridLayout.LayoutParams lp=new GridLayout.LayoutParams();lp.width=0;lp.height=dp(81);lp.columnSpec=GridLayout.spec(GridLayout.UNDEFINED,1f);icons.addView(item,lp);}
+    void show(){begin(false,false);}
+    boolean key(KeyEvent event){
+        int key=event.getKeyCode();boolean down=event.getAction()==KeyEvent.ACTION_DOWN;
+        if(down&&event.isAltPressed()&&key==KeyEvent.KEYCODE_TAB){
+            if(dialog==null||!dialog.isShowing())begin(true,event.isShiftPressed());
+            else cycle(event.isShiftPressed()?-1:1);
+            return true;
+        }
+        if(dialog==null||!dialog.isShowing())return false;
+        if(!down&&(key==KeyEvent.KEYCODE_ALT_LEFT||key==KeyEvent.KEYCODE_ALT_RIGHT)&&keyboard){accept();return true;}
+        if(down&&key==KeyEvent.KEYCODE_ESCAPE){dismiss();return true;}
+        if(down&&key==KeyEvent.KEYCODE_ENTER){accept();return true;}
+        if(down&&(key==KeyEvent.KEYCODE_DPAD_LEFT||key==KeyEvent.KEYCODE_DPAD_RIGHT)){cycle(key==KeyEvent.KEYCODE_DPAD_LEFT?-1:1);return true;}
+        return false;
+    }
+    private void begin(boolean usingKeyboard,boolean backwards){
+        dismiss();keyboard=usingKeyboard;host.preparePreview();((InputMethodManager)activity.getSystemService(Activity.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(activity.getWindow().getDecorView().getWindowToken(),0);
+        List<DesktopWindow> windows=new ArrayList<>(host.windows());Collections.reverse(windows);
+        for(DesktopWindow window:windows)if(window.getParent()!=null)choices.add(new Choice(window.caption(),window.toolId,()->{if(window.getParent()!=null)window.restore();}));
+        for(String id:host.external())choices.add(new Choice(host.label(id),id,()->host.open(id)));
+        int width=Math.min(dp(380),activity.getResources().getDisplayMetrics().widthPixels-dp(24));
+        int columns=Math.max(1,Math.min(7,(width-dp(24))/dp(48)));
+        LinearLayout shell=Aero.column(activity);shell.setPadding(dp(8),dp(12),dp(8),dp(8));shell.setBackground(Aero.panel(activity,XpTheme.surface(activity),XpTheme.surface(activity),0,XpTheme.palette(activity)[1]));
+        GridLayout icons=new GridLayout(activity);icons.setColumnCount(columns);icons.setContentDescription("XP program switcher");
+        for(int i=0;i<choices.size();i++){
+            int index=i;Choice choice=choices.get(i);FrameLayout cell=new FrameLayout(activity);cell.setPadding(dp(6),dp(6),dp(6),dp(6));cell.setFocusable(true);cell.setContentDescription("Switch to "+choice.title);cell.setTooltipText(choice.title);
+            String icon=choice.id.equals("@taskmanager")?"taskmanager":choice.id.equals("@browser")?"browser":choice.id.equals("@notes")?"notes":choice.id.equals(MediaLibrary.PLAYER)?"mediaplayer":choice.id.equals("@control")?"control":"files";
+            cell.addView(new AeroIcon(activity,icon),new FrameLayout.LayoutParams(dp(32),dp(32),Gravity.CENTER));
+            cell.setOnClickListener(v->{select(index);accept();});cell.setOnFocusChangeListener((v,focused)->{if(focused)select(index);});
+            GridLayout.LayoutParams size=new GridLayout.LayoutParams();size.width=dp(48);size.height=dp(48);icons.addView(cell,size);cells.add(cell);
+        }
+        ScrollView scroll=new ScrollView(activity);scroll.addView(icons);shell.addView(scroll,new LinearLayout.LayoutParams(-1,Math.min(dp(48)*Math.max(1,(choices.size()+columns-1)/columns),Math.max(dp(48),activity.getResources().getDisplayMetrics().heightPixels-dp(160)))));
+        selectedTitle=Aero.text(activity,"No open programs",12,Aero.INK);selectedTitle.setContentDescription("Selected program");selectedTitle.setGravity(Gravity.CENTER);selectedTitle.setSingleLine();selectedTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);selectedTitle.setBackground(Aero.panel(activity,XpTheme.surface(activity),XpTheme.surface(activity),0,0xff9c9b97));LinearLayout.LayoutParams label=new LinearLayout.LayoutParams(-1,dp(30));label.topMargin=dp(8);shell.addView(selectedTitle,label);
+        if(!usingKeyboard)shell.addView(Aero.button(activity,"Cancel",this::dismiss),new LinearLayout.LayoutParams(-1,dp(32)));
+        dialog=new Dialog(activity);dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);dialog.setContentView(shell);dialog.setOnKeyListener((d,k,e)->key(e));dialog.show();
+        if(dialog.getWindow()!=null){dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);dialog.getWindow().setWindowAnimations(0);dialog.getWindow().setLayout(width,-2);}
+        select(usingKeyboard&&choices.size()>1?(backwards?choices.size()-1:1):0);
+    }
+    private void cycle(int delta){if(!choices.isEmpty())select(Math.floorMod(selected+delta,choices.size()));}
+    private void select(int index){
+        if(choices.isEmpty())return;selected=Math.floorMod(index,choices.size());
+        for(int i=0;i<cells.size();i++){View cell=cells.get(i);cell.setSelected(i==selected);android.graphics.drawable.GradientDrawable outline=new android.graphics.drawable.GradientDrawable();outline.setColor(XpTheme.surface(activity));if(i==selected)outline.setStroke(dp(2),0xff316ac5);cell.setBackground(outline);}
+        selectedTitle.setText(choices.get(selected).title);View cell=cells.get(selected);cell.requestRectangleOnScreen(new android.graphics.Rect(0,0,cell.getWidth(),cell.getHeight()),true);
+    }
+    private void accept(){if(choices.isEmpty()){dismiss();return;}Runnable action=choices.get(selected).activate;dismiss();action.run();}
     void flip(){show();}
-    boolean dismiss(){boolean shown=dialog!=null&&dialog.isShowing()||groupMenu!=null&&groupMenu.showing();if(dialog!=null){dialog.dismiss();dialog=null;}if(groupMenu!=null){groupMenu.dismiss();groupMenu=null;}return shown;}
+    boolean dismiss(){boolean shown=dialog!=null&&dialog.isShowing()||groupMenu!=null&&groupMenu.showing();if(dialog!=null){dialog.dismiss();dialog=null;}choices.clear();cells.clear();selectedTitle=null;keyboard=false;if(groupMenu!=null){groupMenu.dismiss();groupMenu=null;}return shown;}
     private int dp(int n){return Aero.dp(activity,n);}
 }

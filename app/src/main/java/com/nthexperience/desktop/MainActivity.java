@@ -186,11 +186,11 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                 boolean portrait = getResources().getConfiguration().orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT;
                 int overlap=autoHide==null?0:autoHide.overlap();
                 int available = Math.max(1, height - windowTopInset - overlap - dp(8));
-                int menuHeight = Math.min(dp(portrait ? 536 : 498), available);
-                int menuWidth = Math.min(dp(396), Math.max(1, width - dp(8)));
+                int menuHeight = Math.min(dp(portrait ? 610 : 498), available);
+                int menuWidth = Math.min(dp(410), Math.max(1, width - dp(4)));
                 FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) startMenu.getLayoutParams();
-                if (params.height != menuHeight || params.width != menuWidth || params.bottomMargin != overlap+dp(4)) {
-                    params.bottomMargin=overlap+dp(4);
+                if (params.height != menuHeight || params.width != menuWidth || params.bottomMargin != overlap || params.leftMargin != 0) {
+                    params.bottomMargin=overlap;params.leftMargin=0;
                     params.height = menuHeight;
                     params.width = menuWidth;
                     startMenu.setLayoutParams(params);
@@ -199,7 +199,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     private void buildTaskbar(){
         shell.setClipChildren(false);shell.setClipToPadding(false);
-        LinearLayout taskbar=new LinearLayout(this);taskbarView=taskbar;taskbar.setContentDescription("Desktop taskbar");taskbar.setGravity(Gravity.CENTER_VERTICAL);taskbar.setClipChildren(false);taskbar.setPadding(dp(3),0,dp(3),0);taskbar.setBackground(new AeroGlass(wallpaper,AeroGlass.TASKBAR));taskbar.setElevation(dp(5));
+        XpTaskbar taskbar=new XpTaskbar(this);taskbarView=taskbar;taskbar.setContentDescription("Desktop taskbar");taskbar.setGravity(Gravity.CENTER_VERTICAL);taskbar.setClipChildren(false);taskbar.setPadding(0,0,0,0);taskbar.setBackground(new AeroGlass(wallpaper,AeroGlass.TASKBAR));taskbar.setElevation(dp(5));
         XpStartButton orb=new XpStartButton(this);orb.setContentDescription("Start menu");orb.setFocusable(true);orb.setOnClickListener(v->{if(startMenu.getVisibility()==View.VISIBLE)startMenu.hide();else showStart(false);});ContextMenus.bind(orb,(x,y)->startOrbMenu(orb,x,y));taskbar.addView(orb,new LinearLayout.LayoutParams(dp(92),dp(XpMetrics.ROW)));
         View grip=new TaskbarSeparator(this);grip.setContentDescription("Taskbar commands");grip.setTooltipText("Hold for taskbar commands");taskbar.addView(grip,new LinearLayout.LayoutParams(dp(12),dp(XpMetrics.ROW)));ContextMenus.bind(grip,(x,y)->taskbarMenu(grip,x,y));
         HorizontalScrollView strip=new HorizontalScrollView(this){
@@ -232,7 +232,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             renderTaskbar();
         });
         tray=new SystemTray(this,workspace,wallpaper,new SystemTray.Host(){public void action(String id){vistaAction(id);}public void open(String id){MainActivity.this.open(id);}public void layout(){main.post(()->{layoutWorkspace();renderTaskbar();});}public void opening(){if(previews!=null)previews.dismiss();startMenu.hide();((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(root.getWindowToken(),0);}});taskbar.addView(tray,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
-        clock=Aero.text(this,"",11,XpTheme.taskbarInk(this));clock.setGravity(Gravity.CENTER);clock.setSingleLine(true);clock.setIncludeFontPadding(false);clock.setPadding(dp(5),0,dp(5),0);clock.setMinWidth(dp(62));clock.setBackground(XpControls.notification(this,false));tray.setBackground(XpControls.notification(this,true));clock.setOnClickListener(v->open("@clock"));clock.setContentDescription("Clock and calendar");taskbar.addView(clock,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
+        clock=Aero.text(this,"",11,XpTheme.taskbarInk(this));clock.setGravity(Gravity.CENTER);clock.setSingleLine(true);clock.setIncludeFontPadding(false);clock.setPadding(dp(5),0,dp(5),0);clock.setMinWidth(dp(62));taskbar.notificationStartsAt(tray);clock.setOnClickListener(v->open("@clock"));clock.setContentDescription("Clock and calendar");taskbar.addView(clock,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
         FrameLayout peek=new FrameLayout(this);desktopToggle=peek;View peekStrip=new AeroIcon(this,"showdesktop");peek.addView(peekStrip,new FrameLayout.LayoutParams(dp(22),dp(22),Gravity.CENTER));peek.setContentDescription("Show desktop");peek.setOnClickListener(v->{previews.dismiss();showDesktop();});ContextMenus.bind(peek,(x,y)->taskbarMenu(peek,x,y));peek.setTooltipText("Show desktop");taskbar.addView(peek,2,new LinearLayout.LayoutParams(dp(28),dp(XpMetrics.ROW)));taskbarSlot=new View(this);taskbarSlot.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);shell.addView(taskbarSlot,new LinearLayout.LayoutParams(-1,dp(XpMetrics.TASKBAR)));root.addView(taskbar,new FrameLayout.LayoutParams(-1,dp(XpMetrics.TASKBAR),Gravity.BOTTOM));autoHide=new XpTaskbarAutoHide(root,taskbar,taskbarSlot,()->startMenu!=null&&startMenu.getVisibility()==View.VISIBLE||tray!=null&&tray.showing()||desktopMenu!=null&&desktopMenu.showing()||taskbarReorder!=null&&taskbarReorder.dragging()||taskItems instanceof TaskbarItems&&((TaskbarItems)taskItems).touching());taskbar.getViewTreeObserver().addOnPreDrawListener(()->{syncTaskbarBounds();return true;});applyTaskbarRows();renderTaskbar();
     }
     private void applyTaskbarRows(){
@@ -958,8 +958,25 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     private void window(String id,String title,View body){
         DesktopWindow current=windows.get(id);if(current!=null&&current.getParent()!=null){if(body instanceof VistaShell)((VistaShell)body).close();current.restore();return;}
-        DesktopWindow next=new DesktopWindow(this,workspace,title,body,wallpaper,this::renderTaskbar,store,id,layoutKey);next.safeTop(windowTopInset);next.onPlacement(value->{if(recordableDesktop())steps.record("Window placement: "+value);});windows.put(id,next);
+        DesktopWindow next=new DesktopWindow(this,workspace,title,body,wallpaper,this::renderTaskbar,store,id,layoutKey);next.taskbarAnchor(()->taskbarAnchor(next));next.safeTop(windowTopInset);next.onPlacement(value->{if(recordableDesktop())steps.record("Window placement: "+value);});windows.put(id,next);
         if(workspace.getWidth()>0){next.open();renderTaskbar();}else workspace.post(()->{if(!destroyed&&next.getParent()==null){next.open();renderTaskbar();}});
+    }
+    private android.graphics.Rect taskbarAnchor(DesktopWindow window){
+        String exact=window.toolId;
+        View target=null;
+        for(int i=0;i<taskItems.getChildCount();i++){
+            View child=taskItems.getChildAt(i);Object tag=child.getTag(R.id.taskbar_order_key);
+            if(exact.equals(tag)){target=child;break;}
+        }
+        if(target==null&&folderTask(exact,window))for(int i=0;i<taskItems.getChildCount();i++){
+            View child=taskItems.getChildAt(i);Object tag=child.getTag(R.id.taskbar_order_key);
+            if(tag instanceof String&&folderTask((String)tag,windows.get((String)tag))){target=child;break;}
+        }
+        int[] origin=new int[2];taskbarView.getLocationOnScreen(origin);
+        android.graphics.Rect visible=new android.graphics.Rect();
+        if(target!=null&&target.getGlobalVisibleRect(visible))return visible;
+        int x=origin[0]+Math.min(taskbarView.getWidth()-dp(80),dp(142));
+        return new android.graphics.Rect(x,origin[1]+taskbarView.getHeight()-dp(XpMetrics.TASKBAR),x+dp(80),origin[1]+taskbarView.getHeight());
     }
     private static final int NOTE_OPEN=5101,NOTE_SAVE=5102;
     private int noteGeneration;private Uri noteUri;private String noteName="Untitled",pendingNoteSave;
@@ -1689,8 +1706,9 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     @Override public boolean dispatchGenericMotionEvent(MotionEvent event){if(autoHide!=null)autoHide.hover(event);return super.dispatchGenericMotionEvent(event);}
     @Override public boolean dispatchKeyEvent(KeyEvent event){
+        if(previews!=null&&videoOverlay==null&&!restoringBackup&&previews.key(event))return true;
         if(event.getAction()==KeyEvent.ACTION_DOWN&&event.getRepeatCount()==0&&videoOverlay==null&&!restoringBackup){
-            int key=event.getKeyCode();if(event.isAltPressed()&&key==KeyEvent.KEYCODE_TAB){previews.show();return true;}if(event.isCtrlPressed()&&event.isShiftPressed()&&key==KeyEvent.KEYCODE_ESCAPE){open("@taskmanager");return true;}
+            int key=event.getKeyCode();if(event.isCtrlPressed()&&event.isShiftPressed()&&key==KeyEvent.KEYCODE_ESCAPE){open("@taskmanager");return true;}
             if(event.isMetaPressed()&&key==KeyEvent.KEYCODE_D){showDesktop();return true;}
             if(event.isMetaPressed()&&key==KeyEvent.KEYCODE_E){open("@files");return true;}
             DesktopWindow front=null;for(DesktopWindow window:orderedWindows())if(window.getVisibility()==View.VISIBLE&&!window.minimizing())front=window;

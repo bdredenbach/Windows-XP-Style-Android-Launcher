@@ -10,13 +10,15 @@ import android.view.View;
 
 /** Shared playback glyphs for the Player and the ten-foot Media Center view. */
 final class MediaTransportButton extends View {
-    enum Action { PREVIOUS, PLAY, PAUSE, NEXT, VOLUME }
+    enum Action { PREVIOUS, PLAY, PAUSE, NEXT, STOP, VOLUME }
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path path = new Path();
     private final Shader blue = new LinearGradient(0, 1, 0, 23,
             new int[]{0xffb9ecff, 0xff428ccb, 0xff153c81, 0xff397ed4}, null, Shader.TileMode.CLAMP);
     private Action action;
+    private boolean xp;
+    void xp(boolean value){xp=value;invalidate();}
 
     MediaTransportButton(Context context, Action action, Runnable click) {
         super(context);
@@ -34,6 +36,7 @@ final class MediaTransportButton extends View {
             case PLAY -> "Play";
             case PAUSE -> "Pause";
             case NEXT -> "Next";
+            case STOP -> "Stop";
             case VOLUME -> "Volume";
         };
         setContentDescription(name);
@@ -68,7 +71,7 @@ final class MediaTransportButton extends View {
             canvas.drawCircle(12, 12, 10.5f, paint);
             paint.setStyle(Paint.Style.FILL);
         }
-        paint.setColor(isEnabled() ? 0xffeffaff : 0x81c1d5e4);
+        paint.setColor(isEnabled() ? xp&&!primary?0xff244a84:0xffeffaff : 0x817384a4);
         switch (action) {
             case PLAY -> triangle(canvas, 9, 6.6f, 17, 12, 9, 17.4f);
             case PAUSE -> {
@@ -83,6 +86,7 @@ final class MediaTransportButton extends View {
                 triangle(canvas, 4, 5, 15, 12, 4, 19);
                 canvas.drawRect(16, 5, 19, 19, paint);
             }
+            case STOP -> canvas.drawRect(7,7,17,17,paint);
             case VOLUME -> {
                 canvas.drawRect(3, 9, 7, 15, paint);
                 path.rewind();

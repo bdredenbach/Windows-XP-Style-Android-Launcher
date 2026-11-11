@@ -21,7 +21,7 @@ final class StartMenu extends LinearLayout {
     private final EditText search;private final TextView name,programs;
     private DesktopContextMenu flyout;
     StartMenu(Context c,Actions actions,DesktopStore store,AeroWallpaper wallpaper){
-        super(c);this.actions=actions;this.store=store;setOrientation(VERTICAL);setElevation(Aero.dp(c,18));
+        super(c);this.actions=actions;this.store=store;setOrientation(VERTICAL);setElevation(Aero.dp(c,8));
         setPadding(Aero.dp(c,2),Aero.dp(c,2),Aero.dp(c,2),Aero.dp(c,2));setBackground(XpTheme.chrome(c,AeroGlass.START));
         int[] palette=XpTheme.palette(c);
         profile=new LinearLayout(c);profile.setGravity(Gravity.CENTER_VERTICAL);profile.setPadding(Aero.dp(c,10),Aero.dp(c,5),Aero.dp(c,8),Aero.dp(c,5));
@@ -29,7 +29,7 @@ final class StartMenu extends LinearLayout {
         name=Aero.text(c,"",17,XpTheme.titleInk(c));Aero.bold(name);name.setSingleLine();name.setEllipsize(TextUtils.TruncateAt.END);name.setPadding(Aero.dp(c,10),0,0,0);name.setOnClickListener(v->actions.open("setting:page:accounts"));profile.addView(name,new LayoutParams(0,-1,1));addView(profile,new LayoutParams(-1,Aero.dp(c,58)));
         View line=new View(c);line.setBackgroundColor(0xffffbc55);addView(line,new LayoutParams(-1,Aero.dp(c,1)));
         LinearLayout panes=new LinearLayout(c);panes.setBaselineAligned(false);addView(panes,new LayoutParams(-1,0,1));
-        LinearLayout left=Aero.column(c);left.setBackgroundColor(Color.WHITE);panes.addView(left,new LayoutParams(0,-1,.54f));
+        LinearLayout left=Aero.column(c);left.setBackgroundColor(Color.WHITE);panes.addView(left,new LayoutParams(0,-1,.52f));View seam=new View(c);seam.setBackgroundColor(0xff88acd6);panes.addView(seam,new LayoutParams(Aero.dp(c,1),-1));
         FrameLayout content=new FrameLayout(c);list=new ListView(c);list.setDividerHeight(0);list.setSelector(Aero.selection(c));list.setAdapter(adapter);list.setContentDescription("Installed programs. Hold an app for desktop options.");
         list.setOnItemClickListener((p,v,position,id)->actions.open(shown.get(position).id));
         list.setOnItemLongClickListener((p,v,position,id)->{actions.options(v,shown.get(position).id);return true;});content.addView(list,new FrameLayout.LayoutParams(-1,-1));
@@ -44,9 +44,9 @@ final class StartMenu extends LinearLayout {
             LinearLayout row=new LinearLayout(c);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(Aero.dp(c,3),0,Aero.dp(c,2),0);row.setBackground(XpControls.menuSelection(c));row.setFocusable(true);row.setContentDescription(item[0]);
             row.addView(new AeroIcon(c,item[2]),new LayoutParams(Aero.dp(c,21),Aero.dp(c,21)));
             TextView text=Aero.text(c,item[0],11,0xff12336b);text.setTextColor(XpControls.menuInk(0xff12336b));text.setDuplicateParentStateEnabled(true);text.setMaxLines(2);text.setEllipsize(TextUtils.TruncateAt.END);text.setPadding(Aero.dp(c,5),0,0,0);if(i<5)Aero.bold(text);row.addView(text,new LayoutParams(0,-1,1));
-            row.setOnClickListener(v->{if(item[1].equals("recent"))recent(row);else if(item[1].equals("search"))showSearch();else actions.open(item[1]);});right.addView(row,new LayoutParams(-1,Aero.dp(c,item[1].equals("xp:run")?40:32)));
+            row.setOnClickListener(v->{if(item[1].equals("recent"))recent(row);else if(item[1].equals("search"))showSearch();else actions.open(item[1]);});right.addView(row,new LayoutParams(-1,Aero.dp(c,item[0].equals("Set Program Access and Defaults")?44:item[1].equals("xp:run")?40:36)));
         }
-        ScrollView scroll=new ScrollView(c);scroll.setFillViewport(true);scroll.setVerticalScrollBarEnabled(false);scroll.addView(right,new ScrollView.LayoutParams(-1,-2));panes.addView(scroll,new LayoutParams(0,-1,.46f));
+        ScrollView scroll=new ScrollView(c);scroll.setFillViewport(true);scroll.setVerticalScrollBarEnabled(false);scroll.addView(right,new ScrollView.LayoutParams(-1,-2));panes.addView(scroll,new LayoutParams(0,-1,.48f));
         LinearLayout footer=new LinearLayout(c);footer.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);footer.setPadding(Aero.dp(c,5),0,Aero.dp(c,5),0);
         for(String[] item:new String[][]{{"Log Off","xp:logoff","Log Off"},{"Turn Off","xp:power","Turn Off"}}){TextView button=Aero.text(c,item[0],12,XpTheme.titleInk(c));button.setCompoundDrawablePadding(Aero.dp(c,6));XpNavigation icon=new XpNavigation(c,item[1].equals("xp:logoff")?"logoff":"power");icon.setBounds(0,0,Aero.dp(c,26),Aero.dp(c,26));button.setCompoundDrawables(icon,null,null,null);button.setGravity(Gravity.CENTER);button.setFocusable(true);button.setContentDescription(item[2]);button.setBackground(Aero.selection(c));button.setOnClickListener(v->actions.open(item[1]));footer.addView(button,new LayoutParams(0,Aero.dp(c,40),1));}
         addView(footer,new LayoutParams(-1,Aero.dp(c,44)));
@@ -56,7 +56,7 @@ final class StartMenu extends LinearLayout {
     void entries(List<AppCatalog.Entry> entries){all.clear();all.addAll(entries);filter();}
     void refreshName(){name.setText(store.prefs.getString("desktop_name",getContext().getString(R.string.app_name)));profile.removeViewAt(0);profile.addView(avatar(),0,new LayoutParams(Aero.dp(getContext(),42),Aero.dp(getContext(),42)));}
     void refreshHome(){}
-    void show(boolean keyboard){refreshName();setVisibility(VISIBLE);bringToFront();searchBox.setVisibility(GONE);search.setText("");filter();if(keyboard)showSearch();else{search.clearFocus();requestFocus();}if(Aero.motion(getContext())){setAlpha(0);animate().alpha(1).setDuration(110).start();}else setAlpha(1);}
+    void show(boolean keyboard){animate().cancel();refreshName();setVisibility(VISIBLE);bringToFront();searchBox.setVisibility(GONE);search.setText("");filter();if(keyboard)showSearch();else{search.clearFocus();requestFocus();}if(Aero.motion(getContext())){setAlpha(0);animate().alpha(1).setDuration(140).start();}else setAlpha(1);}
     private void showSearch(){searchBox.setVisibility(VISIBLE);search.requestFocus();search.post(()->((InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE)).showSoftInput(search,InputMethodManager.SHOW_IMPLICIT));}
     void hide(){if(flyout!=null)flyout.dismiss();animate().cancel();((InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(getWindowToken(),0);search.clearFocus();setVisibility(GONE);}
     JSONObject state(){JSONObject value=new JSONObject();GadgetLayout.put(value,"visible",getVisibility()==VISIBLE);GadgetLayout.put(value,"query",search.getText().toString());GadgetLayout.put(value,"search",searchBox.getVisibility()==VISIBLE);GadgetLayout.put(value,"position",list.getFirstVisiblePosition());return value;}

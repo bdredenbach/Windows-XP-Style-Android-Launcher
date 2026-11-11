@@ -52,6 +52,11 @@ final class DesktopWindow extends LinearLayout {
     private final TextView minimizeButton,closeButton,helpButton;
     private boolean active=true,minimizing,peeking;private int beforePeekAccessibility;
     private int transition;
+    private final XpWindowMotion motion=new XpWindowMotion(this);
+    private java.util.function.Supplier<Rect> taskbarTarget;
+    void taskbarAnchor(java.util.function.Supplier<Rect> target){taskbarTarget=target;}
+    private Rect taskbarBounds(){if(taskbarTarget!=null)return taskbarTarget.get();int[] at=new int[2];host.getLocationOnScreen(at);return new Rect(at[0]+Aero.dp(getContext(),100),at[1]+host.getHeight(),at[0]+Aero.dp(getContext(),220),at[1]+host.getHeight()+Aero.dp(getContext(),XpMetrics.ROW));}
+    boolean motionRunning(){return motion.running();}
     private DesktopContextMenu systemMenu;
     private static final int LEFT=1, RIGHT=2, TOP=4, BOTTOM=8;
     private static final int MAX_SAVED_SIZE=2000;
@@ -149,8 +154,8 @@ final class DesktopWindow extends LinearLayout {
     boolean snapped(){return placement==Placement.LEFT||placement==Placement.RIGHT;}
     boolean maximized(){return placement==Placement.MAXIMIZED;}
     private boolean fitted(){return effectivePlacement()!=Placement.FLOATING;}
-    void maximize(){if(!maximized())place(Placement.MAXIMIZED);restore();}
-    void restoreDown(){settle();setVisibility(VISIBLE);bringToFront();place(Placement.FLOATING);}
+    void maximize(){if(getVisibility()!=VISIBLE||minimizing){restore();if(!maximized())placeAnimated(Placement.MAXIMIZED);}else if(!maximized())placeAnimated(Placement.MAXIMIZED);}
+    void restoreDown(){settle();setVisibility(VISIBLE);bringToFront();placeAnimated(Placement.FLOATING);}
     void closeWindow(){if(getParent()==null)return;dismissSystemMenu();settle();hideKeyboard();if(body instanceof XpNotepad)((XpNotepad)body).close();if(body instanceof VistaShell)((VistaShell)body).close();if(body instanceof WeatherPanel)((WeatherPanel)body).close();if(body instanceof BrowserPanel)((BrowserPanel)body).close();if(body instanceof PhotoGallery)((PhotoGallery)body).close();if(body instanceof TaskManagerPanel)((TaskManagerPanel)body).close();if(body instanceof RecyclePanel)((RecyclePanel)body).close();host.removeView(this);changed.run();}
     void showSystemMenu(View anchor,float x,float y){dismissSystemMenu();systemMenu=new DesktopContextMenu(getContext(),"Window commands");systemMenu.item("Restore","empty",fitted()||getVisibility()!=VISIBLE||minimizing,()->{if(getVisibility()!=VISIBLE||minimizing)restore();else if(fitted())restoreDown();});systemMenu.item("Minimize","empty",getVisibility()==VISIBLE&&!minimizing,this::minimize);systemMenu.item("Maximize","empty",!maximized(),this::maximize);        systemMenu.separator();systemMenu.item("Close","close",this::closeWindow);ContextMenus.show(systemMenu,anchor,x,y);}
     void dismissSystemMenu(){if(systemMenu!=null){systemMenu.dismiss();systemMenu=null;}}
@@ -313,15 +318,23 @@ final class DesktopWindow extends LinearLayout {
         FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(Math.max(1,width),Math.max(1,height));
         normalW=width;normalH=height;host.addView(this,lp); setX((hostWidth()-width)/2f); setY(safeTop+Math.max(margin,(host.getHeight()-safeTop-height)/3f));
         if((toolId.equals("@browser")||toolId.equals("@photos")||toolId.equals(MediaLibrary.PLAYER))&&!store.prefs.contains(geometryKey))placement=Placement.MAXIMIZED;
-        readGeometry(null);fitToHost();changed.run();
+        readGeometry(null);fitToHost();changed.run();post(()->{if(getParent()==host&&getVisibility()==VISIBLE&&!minimizing){Rect end=motion.captionBounds(),from=new Rect(end);from.inset(Math.max(0,from.width()/3),0);motion.play(from,end,caption(),()->{});}});
     }
     private void hideKeyboard(){
         ((android.view.inputmethod.InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(getWindowToken(),0);
         clearFocus();
     }
-    void settle(){peek(false);cancelResize();cancelCaptionDrag();transition++;animate().withEndAction(null).cancel();minimizing=false;setAlpha(1);setScaleX(1);setScaleY(1);setPivotX(getWidth()/2f);setPivotY(getHeight()/2f);}
-    void minimize(){dismissSystemMenu();hideKeyboard();settle();if(!Aero.motion(getContext())){setVisibility(GONE);changed.run();return;}minimizing=true;int token=++transition;setPivotX(getWidth()*.2f);setPivotY(host.getHeight()-getY()+Aero.dp(getContext(),20));changed.run();animate().scaleX(.15f).scaleY(.15f).alpha(0).setDuration(180).withEndAction(()->{if(token!=transition)return;setVisibility(GONE);settle();changed.run();}).start();}
-    void restore(){boolean hidden=getVisibility()!=VISIBLE||minimizing;settle();setVisibility(VISIBLE);bringToFront();changed.run();if(hidden&&Aero.motion(getContext())){int token=++transition;setPivotX(getWidth()*.2f);setPivotY(host.getHeight()-getY()+Aero.dp(getContext(),20));setScaleX(.18f);setScaleY(.18f);setAlpha(0);animate().scaleX(1).scaleY(1).alpha(1).setDuration(190).withEndAction(()->{if(token==transition)settle();}).start();}}
+    void settle(){peek(false);cancelResize();cancelCaptionDrag();transition++;motion.cancel();animate().withEndAction(null).cancel();if(minimizing&&getVisibility()==INVISIBLE)setVisibility(GONE);minimizing=false;setAlpha(1);setScaleX(1);setScaleY(1);setPivotX(getWidth()/2f);setPivotY(getHeight()/2f);}
+    void minimize(){
+        if(getParent()==null)return;dismissSystemMenu();hideKeyboard();settle();
+        Rect from=motion.captionBounds(),destination=taskbarBounds();minimizing=true;int token=++transition;
+        setVisibility(INVISIBLE);changed.run();
+        motion.play(from,destination,caption(),()->{if(token!=transition)return;setVisibility(GONE);settle();changed.run();});
+    }
+    void restore(){
+        boolean hidden=getVisibility()!=VISIBLE||minimizing;Rect from=hidden?taskbarBounds():null;settle();setVisibility(VISIBLE);bringToFront();changed.run();
+        if(hidden)motion.play(from,motion.captionBounds(),caption(),()->{});
+    }
     @Override protected void onDetachedFromWindow(){dismissSystemMenu();settle();super.onDetachedFromWindow();}
     private void beginCaptionDrag(MotionEvent e){
         captionTracking=true;
@@ -483,9 +496,16 @@ final class DesktopWindow extends LinearLayout {
         changed.run();
     }
 
+    private void placeAnimated(Placement target){
+        settle();Rect from=motion.captionBounds();place(target);
+        // fitToHost commits the final geometry once; only the caption is animated.
+        int[] origin=new int[2];host.getLocationOnScreen(origin);
+        Rect end=new Rect(origin[0]+Math.round(getX()),origin[1]+Math.round(getY()),origin[0]+Math.round(getX())+getLayoutParams().width,origin[1]+Math.round(getY())+Aero.dp(getContext(),XpMetrics.CAPTION));
+        motion.play(from,end,caption(),()->{});
+    }
     private void toggleMaximize(){
         cancelCaptionDrag();
-        place(fitted()?Placement.FLOATING:Placement.MAXIMIZED);
+        placeAnimated(fitted()?Placement.FLOATING:Placement.MAXIMIZED);
     }
 
     JSONObject geometry(){

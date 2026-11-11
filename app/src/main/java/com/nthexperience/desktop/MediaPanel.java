@@ -35,7 +35,11 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
     private final TextureView video;
     private final ImageView art;
     private final View musicIcon;
-    private final Waveform waveform;
+    private final XpMusicVisualizer waveform;
+    private final TextView visualChoice;
+    private int visualMode;
+    private final LinearLayout playingArea,queueSide;
+    private final ListView inlineQueue;
     private final TextView brand, title, artist, time, state, switchView;
     private final MediaTransportButton play;
     private final Map<String,TextView> navigation = new LinkedHashMap<>();
@@ -60,6 +64,8 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         this.library = library;
         this.host = host;
         this.center = center;
+        visualMode=Math.max(0,Math.min(4,context.getSharedPreferences("xp_media",0).getInt("visualization",0)));
+        visualize=!center&&visualMode<4;
         ink = center ? 0xffecfaff : Aero.INK;
         setOrientation(VERTICAL);
         setPadding(dp(center ? 16 : 0), dp(center?6:0), dp(center ? 16 : 0), dp(center?6:0));
@@ -80,14 +86,14 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         LinearLayout tabs = new LinearLayout(context);
         if (center) {
             tab(tabs, "Start"); tab(tabs, "Music"); tab(tabs, "Videos");
-        } else tab(tabs, "Library");
-        tab(tabs, "Now Playing"); tab(tabs, "Queue");
+        }
+        tab(tabs, "Now Playing");if(!center)tab(tabs,"Library"); tab(tabs, "Queue");
         addView(tabs);
 
         body = new FrameLayout(context);
         if(center)addView(body, new LayoutParams(-1, 0, 1));
         else{removeView(tabs);tabs.setOrientation(VERTICAL);tabs.setPadding(dp(4),dp(12),dp(4),dp(4));tabs.setBackground(Aero.gloss(context,new int[]{0xff5c73c6,0xff233d85,0xff152b68},0,0));for(int i=0;i<tabs.getChildCount();i++)tabs.getChildAt(i).setLayoutParams(new LayoutParams(-1,dp(48)));LinearLayout area=new LinearLayout(context);area.addView(tabs,new LayoutParams(dp(104),-1));area.addView(body,new LayoutParams(0,-1,1));addView(area,new LayoutParams(-1,0,1));}
-        now = Aero.column(context);
+        now = Aero.column(context);now.setBackgroundColor(0xff061328);
         title = label("Nothing playing", center ? 19 : 15);
         title.setTextColor(0xffe5f6ff);
         title.setPadding(dp(8), 0, dp(8), 0);
@@ -100,6 +106,8 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         artist.setPadding(dp(8), 0, dp(8), 0);
         artist.setTextColor(0xff9db9d1);
         now.addView(artist, new LayoutParams(-1, dp(18)));
+        visualChoice=label("",11);visualChoice.setTextColor(0xff17366d);visualChoice.setGravity(Gravity.CENTER_VERTICAL);visualChoice.setPadding(dp(8),0,dp(5),0);visualChoice.setBackground(Aero.gloss(context,new int[]{0xffeff3fc,0xffb6c6e6},0,0xff879cca));visualChoice.setFocusable(true);visualChoice.setOnClickListener(v->visualizationMenu(visualChoice));
+        visualChoice.setVisibility(center?GONE:VISIBLE);now.addView(visualChoice,new LayoutParams(-1,dp(28)));
         picture = new FrameLayout(context);
         picture.setBackground(Aero.gloss(context,
                 new int[]{0xff02050b, 0xff0e2a42, 0xff184462, 0xff050911}, 2, 0xff193952));
@@ -108,14 +116,18 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         art = new ImageView(context);
         art.setScaleType(ImageView.ScaleType.FIT_CENTER);
         picture.addView(art, new FrameLayout.LayoutParams(-1, -1));
-        waveform = new Waveform(context);
+        waveform = new XpMusicVisualizer(context,playback.signal,()->!playback.released&&playback.player.isPlaying());
+        waveform.mode(Math.min(visualMode,3));
         picture.addView(waveform, new FrameLayout.LayoutParams(-1, -1));
         video = new TextureView(context);
         video.setContentDescription("Media video");
         picture.addView(video, new FrameLayout.LayoutParams(-1, -1, Gravity.CENTER));
         picture.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob) -> resizeVideo());
         now.addView(picture, new LayoutParams(-1, 0, 1));
-        body.addView(now, new FrameLayout.LayoutParams(-1, -1));
+        playingArea=new LinearLayout(context);playingArea.addView(now,new LayoutParams(0,-1,1));
+        queueSide=Aero.column(context);queueSide.setBackgroundColor(0xfff4f6fd);TextView queueTitle=label("Now Playing List",11);queueTitle.setPadding(dp(7),0,0,0);queueTitle.setBackgroundColor(0xffd3dcef);queueSide.addView(queueTitle,new LayoutParams(-1,dp(28)));
+        inlineQueue=new ListView(context);inlineQueue.setContentDescription("Now Playing side list");inlineQueue.setDividerHeight(1);inlineQueue.setOnItemClickListener((parent,row,index,id)->playback.select(index));queueSide.addView(inlineQueue,new LayoutParams(-1,0,1));queueSide.setVisibility(GONE);playingArea.addView(queueSide,new LayoutParams(dp(164),-1));
+        body.addView(playingArea,new FrameLayout.LayoutParams(-1,-1));
 
         LinearLayout timeline = new LinearLayout(context);
         timeline.setGravity(Gravity.CENTER_VERTICAL);
@@ -144,11 +156,11 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         LinearLayout deck = Aero.column(context);
         deck.setBackground(Aero.gloss(context, center
                 ? new int[]{0xff19395b, 0xff112943, 0xff0b1e37}
-                : new int[]{0xffc9d2f1, 0xff899ecf, 0xffbac9ed}, 5, 0xff496786));
+                : new int[]{0xffedf1fc, 0xffb2c3e5, 0xffd8e2f5}, center?5:0, 0xff738bb5));
         deck.addView(timeline);
         LinearLayout controls = new LinearLayout(context);
         controls.setGravity(Gravity.CENTER);
-        controls.addView(new Space(context), new LayoutParams(dp(44), dp(46)));
+        transport(controls,MediaTransportButton.Action.STOP,()->{playback.player.pause();playback.player.seekTo(0);});
         transport(controls, MediaTransportButton.Action.PREVIOUS,
                 () -> playback.select(playback.player.getCurrentMediaItemIndex() - 1));
         play = transport(controls, MediaTransportButton.Action.PLAY, playback::playPause);
@@ -167,15 +179,16 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         state.setSingleLine();
         state.setPadding(dp(6), 0, 0, 0);
         state.setEllipsize(TextUtils.TruncateAt.END);
-        options.addView(state, new LayoutParams(0, dp(40), 1));
+        options.addView(state, new LayoutParams(0, dp(center?40:28), 1));
+        if(!center){switchView.setTextSize(11);switchView.getLayoutParams().height=dp(28);switchView.setPadding(dp(5),0,dp(5),0);}
         addView(options);
-        show(playback.current() == null ? (center ? "Start" : "Library") : "Now Playing");
+        show(center&&playback.current()==null?"Start":"Now Playing");
         updatePlayback();
     }
 
     private void classicMenu(View anchor,String name){DesktopContextMenu menu=new DesktopContextMenu(getContext(),"Media Player "+name+" menu");switch(name){
         case "File":menu.item("Open…","files",host::addFiles);menu.item("Add to Media Library…","music",host::addFiles);break;
-        case "View":menu.item("Now Playing","mediaplayer",this::showNow);menu.item("Media Library","music",()->show("Library"));menu.item("Now Playing List","files",()->show("Queue"));menu.item("Media Center","mediacenter",()->host.switchView(true));break;
+        case "View":menu.item("Visualizations…","mediaplayer",()->visualizationMenu(visualChoice));menu.item("Now Playing","mediaplayer",this::showNow);menu.item("Media Library","music",()->show("Library"));menu.item("Now Playing List","files",()->show("Queue"));menu.item("Media Center","mediacenter",()->host.switchView(true));break;
         case "Play":menu.item("Play / Pause","mediaplayer",playback::playPause);menu.item("Stop","empty",()->{playback.player.pause();playback.player.seekTo(0);});menu.item("Previous","empty",()->playback.select(playback.player.getCurrentMediaItemIndex()-1));menu.item("Next","empty",()->playback.select(playback.player.getCurrentMediaItemIndex()+1));break;
         case "Tools":menu.item("Volume…","sound",this::volume);break;
         default:menu.item("About Nth Media Player","mediaplayer",()->Aero.dialog(getContext()).setTitle("Nth Media Player").setMessage("Nth Desktop XP media library and player. Select local music or video files with File > Open.").setPositiveButton("OK",null).show());
@@ -204,7 +217,7 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
 
     private MediaTransportButton transport(LinearLayout row, MediaTransportButton.Action action, Runnable click) {
         MediaTransportButton key = new MediaTransportButton(getContext(), action, click);
-        row.addView(key, new LayoutParams(dp(44), dp(46)));
+        key.xp(!center);row.addView(key, new LayoutParams(dp(44), dp(46)));
         return key;
     }
     private void tab(LinearLayout row, String name) {
@@ -271,7 +284,7 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
     private void populate() {
         while (body.getChildCount() > 1) body.removeViewAt(1);
         boolean playing = page.equals("Now Playing");
-        now.setVisibility(playing ? VISIBLE : GONE);
+        playingArea.setVisibility(playing ? VISIBLE : GONE);
         if (playing) return;
         if (page.equals("Start")) { centerStart(); return; }
         List<MediaLibrary.Entry> items = visibleItems();
@@ -465,6 +478,7 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         boolean hasVideo = item != null && item.video();
         video.setVisibility(hasVideo ? VISIBLE : GONE);
         video.setKeepScreenOn(hasVideo && active && page.equals("Now Playing"));
+        visualChoice.setText((visualMode<4?XpMusicVisualizer.NAMES[visualMode]:"Album Art")+"  ▾");visualChoice.setContentDescription("Visualization: "+(visualMode<4?XpMusicVisualizer.NAMES[visualMode]:"Album Art"));visualChoice.setEnabled(!hasVideo);
         waveform.setVisibility(!hasVideo && visualize ? VISIBLE : GONE);
         waveform.invalidate();
         if (artwork != metadata.artworkData) {
@@ -502,13 +516,13 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
     }
     @Override public void onEvents(Player player, Player.Events events) {
         if (events.contains(Player.EVENT_TIMELINE_CHANGED) && page.equals("Queue")) populate();
-        updatePlayback();
+        updateInlineQueue();updatePlayback();
     }
     @Override protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         attached = true;
         playback.player.addListener(this);
-        updatePlayback();
+        updateInlineQueue();updatePlayback();
         post(tick);
     }
     @Override protected void onDetachedFromWindow() {
@@ -520,30 +534,18 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         }
         super.onDetachedFromWindow();
     }
-    private final class Waveform extends View {
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Path path = new Path();
-        Waveform(Context context) {
-            super(context);
-            setContentDescription("Music visualizer");
-        }
-        @Override protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
-            if (width > 0 && height > 0)
-                paint.setShader(new LinearGradient(0, 0, width, height,
-                        new int[]{0xff77e6ff, 0xff80e0c4, 0xff9474ff}, null, Shader.TileMode.CLAMP));
-        }
-        @Override protected void onDraw(Canvas canvas) {
-            float[] values = playback.signal.samples();
-            boolean moving = !playback.released && playback.player.isPlaying() && Aero.motion(getContext());
-            float middle = getHeight() * .5f, amplitude = moving ? middle * .92f : 0;
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(dp(2));
-            path.rewind();
-            path.moveTo(0, middle);
-            for (int i = 0; i < values.length; i++)
-                path.lineTo(getWidth() * (i + 1f) / values.length, middle + values[i] * amplitude);
-            canvas.drawPath(path, paint);
-            if (moving && isShown()) postInvalidateDelayed(34);
-        }
+    private void visualizationMenu(View anchor){
+        DesktopContextMenu menu=new DesktopContextMenu(getContext(),"Music visualizations");
+        for(int i=0;i<5;i++){int selected=i;String name=i<4?XpMusicVisualizer.NAMES[i]:"Album Art";menu.item((i==visualMode?"✓ ":"")+name,"mediaplayer",()->visualization(selected));}
+        ContextMenus.centered(anchor,(x,y)->ContextMenus.show(menu,anchor,x,y));
+    }
+    void visualization(int mode){
+        visualMode=Math.max(0,Math.min(4,mode));visualize=visualMode<4;waveform.mode(Math.min(3,visualMode));getContext().getSharedPreferences("xp_media",0).edit().putInt("visualization",visualMode).apply();updatePlayback();
+    }
+    @Override protected void onSizeChanged(int w,int h,int oldw,int oldh){super.onSizeChanged(w,h,oldw,oldh);queueSide.setVisibility(!center&&w>=dp(620)?VISIBLE:GONE);}
+    private void updateInlineQueue(){
+        List<MediaLibrary.Entry> items=playback.queue();
+        inlineQueue.setAdapter(new BaseAdapter(){public int getCount(){return items.size();}public Object getItem(int p){return items.get(p);}public long getItemId(int p){return p;}
+            public View getView(int p,View old,ViewGroup parent){TextView row=label(items.get(p).name,11);row.setTextColor(p==playback.player.getCurrentMediaItemIndex()?Color.WHITE:0xff183260);row.setBackgroundColor(p==playback.player.getCurrentMediaItemIndex()?0xff316ac5:0xfff4f6fd);row.setSingleLine();row.setEllipsize(TextUtils.TruncateAt.END);row.setPadding(dp(7),0,dp(5),0);row.setMinHeight(dp(32));return row;}});
     }
 }

@@ -1,9 +1,24 @@
 # Nth Desktop XP
 
-An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.5.0**.
+An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.6.0**.
 
 Android 8.0 or newer. Target SDK 36. Application ID: `com.nthexperience.desktop.xp`.
 It installs alongside Vista, Seven, Eight, Ten and Eleven.
+
+## Shell and Media Player polish — 0.6.0
+
+The notification area is one flush surface through the tray and clock, including
+expanded rows. Start is taller in portrait and docks to the taskbar. Window
+minimize/restore and maximize/restore use XP-style moving captions, respect
+reduced motion, and safely handle interrupted actions. Alt+Tab now cycles a
+compact icon grid in both directions and activates the selection on Alt release.
+
+Nth Media Player has XP-era blue/silver chrome, visible transport glyphs, Stop,
+a wide-screen Now Playing list and four selectable PCM-driven visualizations:
+Bars, Scope, Ambience and Particle Rings. Album Art remains available. Playback
+and the existing local library remain shared with Media Center.
+
+[Implementation, research and verification](docs/XP_0_6_POLISH.md).
 
 ## HD wallpapers and XP shell details — 0.5.0
 

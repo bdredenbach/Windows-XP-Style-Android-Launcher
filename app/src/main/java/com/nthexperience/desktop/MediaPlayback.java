@@ -85,7 +85,18 @@ final class MediaPlayback {
 
     /** PCM envelope from the player itself. The microphone and device audio are never used. */
     static final class Signal implements TeeAudioProcessor.AudioBufferSink {
-        private static final int SAMPLES = 96;
+        private static final int SAMPLES = 256;
+        private static final float[] WINDOW=new float[SAMPLES];
+        private static final float[][] COS=new float[24][SAMPLES],SIN=new float[24][SAMPLES];
+        static {
+            for(int i=0;i<SAMPLES;i++)WINDOW[i]=(float)(.5-.5*Math.cos(2*Math.PI*i/(SAMPLES-1)));
+            for(int band=0;band<24;band++){
+                int bin=Math.max(1,Math.round((float)Math.pow(SAMPLES*.42,band/23f)));
+                for(int i=0;i<SAMPLES;i++){double angle=2*Math.PI*bin*i/SAMPLES;COS[band][i]=(float)Math.cos(angle);SIN[band][i]=(float)Math.sin(angle);}
+            }
+        }
+        private float[] analyzed;
+        private float[] bands=new float[24];
         private volatile float[] envelope = new float[SAMPLES];
         private int stride = 2, encoding = C.ENCODING_PCM_16BIT;
         @Override public void flush(int sampleRate, int channels, int encoding) {
@@ -100,11 +111,23 @@ final class MediaPlayback {
             ByteBuffer pcm = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN);
             float[] next = new float[SAMPLES];
             for (int i = 0; i < next.length; i++) {
-                int at = pcm.position() + (int)((long)i * frames / next.length) * stride;
-                next[i] = pcm.getShort(at) / 32768f;
+                int at = pcm.position() + Math.min(frames-1,Math.max(0,frames-next.length)+i) * stride;
+                float sum=0;for(int channel=0;channel<stride/2;channel++)sum+=pcm.getShort(at+channel*2)/32768f;
+                next[i] = sum/(stride/2);
             }
             envelope = next;
         }
         float[] samples() { return envelope; }
+        // Log-spaced DFT bins over one PCM snapshot. Rendering never mutates the audio buffer.
+        float[] spectrum(){
+            float[] values=envelope;if(values==analyzed)return bands;
+            float[] next=new float[24];int n=values.length;
+            for(int band=0;band<next.length;band++){
+                double re=0,im=0;
+                for(int i=0;i<n;i++){float value=values[i]*WINDOW[i];re+=value*COS[band][i];im-=value*SIN[band][i];}
+                next[band]=(float)(Math.hypot(re,im)*4/n);
+            }
+            analyzed=values;bands=next;return next;
+        }
     }
 }
