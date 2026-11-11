@@ -813,8 +813,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     private void desktopOptions(float x,float y){
         if(desktopMenu!=null)desktopMenu.dismiss();startMenu.hide();previews.dismiss();
         desktopMenu=new DesktopContextMenu(this,"Desktop context menu");
-        desktopMenu.submenu("View","appearance",()->desktopViewMenu(x,y));
-        desktopMenu.submenu("Sort by","programs",()->desktopSortMenu(x,y));
+        desktopMenu.submenu("Arrange Icons By","programs",()->desktopSortMenu(x,y));
         desktopMenu.item("Refresh","refresh",()->{DesktopCache.invalidate();scanApps();sidebar.refresh();});
         desktopMenu.separator();
         desktopMenu.item("Paste","paste",!ExplorerClipboard.shortcuts.isEmpty(),()->{
@@ -826,7 +825,6 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         desktopMenu.separator();
 
 
-        desktopMenu.submenu("Desktop background","pictures",()->backgroundMenu(x,y));
 
         desktopMenu.item("Properties","appearance",this::appearance);
         if(!isHome()){desktopMenu.separator();desktopMenu.item("Make default home","orb",this::home);}
@@ -870,7 +868,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     private void quickOptions(View anchor,String id){ContextMenus.centered(anchor,(x,y)->shortcutMenu(anchor,id,"quick",x,y));}
     private void desktopViewMenu(float x,float y){desktopMenu=new DesktopContextMenu(this);String[] names={"Small icons","Medium icons","Large icons"};for(int i=0;i<names.length;i++){final int value=i;desktopMenu.item((store.prefs.getInt("desktop_icon_size",1)==i?"✓  ":"")+names[i],"computer",()->{store.prefs.edit().putInt("desktop_icon_size",value).remove("desktop_icon_percent").apply();desktopChanged();});}desktopMenu.separator();desktopMenu.checked("Show desktop icons",store.prefs.getBoolean("show_desktop_icons",true),()->{store.prefs.edit().putBoolean("show_desktop_icons",!store.prefs.getBoolean("show_desktop_icons",true)).apply();renderDesktop();});showDesktopMenu(x,y);}
-    private void desktopSortMenu(float x,float y){desktopMenu=new DesktopContextMenu(this);for(String mode:Arrays.asList("Name","Type"))desktopMenu.item(mode,"programs",()->{List<String> ids=store.desktop();java.text.Collator collator=java.text.Collator.getInstance();ids.sort((a,b)->{if(mode.equals("Type")&&store.isFolder(a)!=store.isFolder(b))return store.isFolder(a)?-1:1;return collator.compare(label(a),label(b));});store.desktop(ids);desktop.clearPositions();desktopChanged();});desktopMenu.show(root,x,y,shell.getPaddingLeft(),shell.getPaddingTop()+windowTopInset,shell.getPaddingRight(),shell.getPaddingBottom());}
+    private void desktopSortMenu(float x,float y){desktopMenu=new DesktopContextMenu(this);for(String mode:Arrays.asList("Name","Type"))desktopMenu.item(mode,"programs",()->{List<String> ids=store.desktop();java.text.Collator collator=java.text.Collator.getInstance();ids.sort((a,b)->{if(mode.equals("Type")&&store.isFolder(a)!=store.isFolder(b))return store.isFolder(a)?-1:1;return collator.compare(label(a),label(b));});store.desktop(ids);desktop.clearPositions();desktopChanged();});desktopMenu.separator();desktopMenu.checked("Align to Grid",store.prefs.getBoolean("snap_desktop",true),()->{store.prefs.edit().putBoolean("snap_desktop",!store.prefs.getBoolean("snap_desktop",true)).apply();desktopChanged();});desktopMenu.checked("Show Desktop Icons",store.prefs.getBoolean("show_desktop_icons",true),()->{store.prefs.edit().putBoolean("show_desktop_icons",!store.prefs.getBoolean("show_desktop_icons",true)).apply();renderDesktop();});desktopMenu.show(root,x,y,shell.getPaddingLeft(),shell.getPaddingTop()+windowTopInset,shell.getPaddingRight(),shell.getPaddingBottom());}
     private void startOrbMenu(View anchor,float x,float y){if(desktopMenu!=null)desktopMenu.dismiss();startMenu.hide();if(tray!=null)tray.dismiss();desktopMenu=new DesktopContextMenu(this,"Start button context menu");desktopMenu.item("Open","orb",()->showStart(false));desktopMenu.item("Explore","files",()->open("@files"));desktopMenu.item("Search","search",()->showStart(true));desktopMenu.separator();desktopMenu.item("Properties","control",()->open("setting:page:taskbar"));ContextMenus.show(desktopMenu,anchor,x,y);}
     private void showStart(boolean search){if(previews!=null)previews.dismiss();if(tray!=null)tray.dismiss();startMenu.show(search);}
     private void showDesktop(){
@@ -1694,8 +1692,8 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                 switch(key){
 
 
-                    case KeyEvent.KEYCODE_DPAD_UP: front.maximize();return true;
-                    case KeyEvent.KEYCODE_DPAD_DOWN: if(front.snapped()||front.maximized())front.restoreDown();else front.minimize();return true;
+
+
 
                 }
             }

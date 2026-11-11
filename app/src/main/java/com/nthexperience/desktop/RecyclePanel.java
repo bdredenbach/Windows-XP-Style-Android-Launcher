@@ -211,7 +211,7 @@ final class RecyclePanel extends VistaShell {
     }
     private void views(){
         DesktopContextMenu menu=new DesktopContextMenu(getContext(),"Recycle Bin Views");
-        for(String label:VIEWS)menu.checked(label,view.equals(label),()->{view=label;render();});
+        for(String label:VIEWS)if(!label.equals("Small icons"))menu.checked(label.equals("Large icons")?"Thumbnails":label.equals("Medium icons")?"Icons":label,view.equals(label),()->{view=label;render();});
         show(menu);
     }
     private void menu(String label){
