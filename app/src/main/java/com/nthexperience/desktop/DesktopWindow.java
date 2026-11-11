@@ -306,7 +306,8 @@ final class DesktopWindow extends LinearLayout {
     }
     void open(){
         int margin=Aero.dp(getContext(),12);
-        int width=Math.min(Aero.dp(getContext(),520),hostWidth()-margin*2);
+        boolean folder=body instanceof VistaExplorer||body instanceof DesktopOrganizer||body instanceof RecyclePanel||body instanceof VistaControlPanel&&!((VistaControlPanel)body).isDisplayPage()&&!java.util.Arrays.asList("system","taskbar").contains(((VistaControlPanel)body).page());
+        int width=Math.min(Aero.dp(getContext(),folder?720:520),hostWidth()-margin*2);
         int height=Math.min(Aero.dp(getContext(),490),host.getHeight()-safeTop-margin*2);
         FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(Math.max(1,width),Math.max(1,height));
         normalW=width;normalH=height;host.addView(this,lp); setX((hostWidth()-width)/2f); setY(safeTop+Math.max(margin,(host.getHeight()-safeTop-height)/3f));

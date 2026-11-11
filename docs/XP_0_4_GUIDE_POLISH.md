@@ -8,7 +8,7 @@
 
 ## Changes
 
-Control Panel uses the guide's blue home, white icon labels, Pick a category heading and ten XP categories. Later applet names are replaced with Add or Remove Programs, Network Connections, Set Program Access and Defaults, Sounds and Audio Devices, and Accessibility Options. The sidebar has inset groups with white headers, light blue bodies and a 16dp gap. Category selection, Classic View, search and Android destinations still work.
+Control Panel uses the guide's blue home, white icon labels, Pick a category heading and ten XP categories. Later applet names are replaced with Add or Remove Programs, Network Connections, Set Program Access and Defaults, Sounds and Audio Devices, and Accessibility Options. The sidebar has inset groups with white headers, light blue bodies and a 16dp gap. Category selection, Classic View, search and Android destinations still work. New folder/Control Panel windows use a 720dp cap so landscape can show the guide’s two category columns; saved sizes retain priority.
 
 Explorer's common tasks, app folders and Recycle Bin receive separated groups, inner padding, wrapping links, classic menus and beige navigation/address chrome. Folders retains a white hierarchy with small boxed expand controls, explicit selected rows and deeper indentation. The reading pane and Include in library actions are removed. Saved library routes open the corresponding My folder; old library records remain accepted for backup compatibility.
 
