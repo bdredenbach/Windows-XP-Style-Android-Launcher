@@ -1,3 +1,18 @@
+# Current XP 0.5.0 asset inventory
+
+The APK uses Wine Tahoma regular/bold, XP.css caption controls, the supplied XP
+icons and twenty stable XP wallpaper choices. Twelve wallpaper images now use
+the user-supplied HD pack, with five additional portrait variants. Exact mappings
+and dimensions are in `third_party/xp-hd-wallpapers/asset-map.json`; provenance and
+archive notes are retained there. Images retain their individual copyrights;
+no blanket license is inferred from the supplied archive.
+
+Aurora WebPs and Selawik font assets mentioned in the historical shared-engine
+notes below are no longer packaged. Their legacy background IDs render procedural
+fallbacks. XP power/logoff controls and notification balloons are native drawings.
+
+The remaining sections record the shared engine's historical asset provenance.
+
 # XP supplied desktop icons (0.1.1)
 
 The owner supplied `windows-xp-desktop.zip`. Its five original ICO files and README are preserved under `third_party/xp-desktop-icons/` with SHA-256 metadata. The supplied README declares “Released to Public Domain” and identifies https://www.rw-designer.com/icon-set/windows-xp-desktop as its source. This records the supplied provenance; no ownership or authorship has been inferred.

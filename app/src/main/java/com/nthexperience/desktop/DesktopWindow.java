@@ -49,7 +49,7 @@ final class DesktopWindow extends LinearLayout {
     private int dragWidth, dragTop, dragHeight;
     private final int touchSlop, snapEdge, snapMinWidth, snapMinHeight;
     private final AeroGlass glass;
-    private final TextView minimizeButton,closeButton;
+    private final TextView minimizeButton,closeButton,helpButton;
     private boolean active=true,minimizing,peeking;private int beforePeekAccessibility;
     private int transition;
     private DesktopContextMenu systemMenu;
@@ -78,13 +78,14 @@ final class DesktopWindow extends LinearLayout {
         maximizeButton=chrome("□",this::toggleMaximize);
         TextView close=chrome("×",this::closeWindow);closeButton=close;
         close.setTextColor(Color.WHITE);
-        bar.addView(minimize); bar.addView(maximizeButton); bar.addView(close);
+        helpButton=chrome("?",()->Aero.dialog(context).setTitle("Help for "+caption()).setMessage("Choose a tab to view options. Apply saves changes and keeps this window open. OK saves and closes; Cancel discards unapplied changes. Drag a window corner to resize it. Android controls device permissions and system settings.").setPositiveButton("OK",null).show());helpButton.setContentDescription("Help for properties");helpButton.setVisibility(title.contains("Properties")?VISIBLE:GONE);
+        bar.addView(minimize); bar.addView(maximizeButton);bar.addView(helpButton); bar.addView(close);
         addView(bar,new LayoutParams(-1,Aero.dp(context,XpMetrics.CAPTION)));
         body.setBackgroundColor(XpTheme.surface(context)); addView(body,new LayoutParams(-1,0,1));
         bindCaptionIcon(bar.getChildAt(0));
         bar.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{
             boolean narrow=r-l<Aero.dp(context,225);
-            for(View button:new View[]{minimizeButton,maximizeButton,closeButton})captionWidth(button,narrow?28:32);
+            for(View button:new View[]{minimizeButton,maximizeButton,helpButton,closeButton})captionWidth(button,narrow?28:32);
             captionWidth(bar.getChildAt(0),narrow?20:23);
             label.setPadding(Aero.dp(context,narrow?3:4),0,0,0);
         });
@@ -155,10 +156,10 @@ final class DesktopWindow extends LinearLayout {
     void dismissSystemMenu(){if(systemMenu!=null){systemMenu.dismiss();systemMenu=null;}}
     void arrange(int x,int y,int width,int height){settle();placement=Placement.FLOATING;normalW=Math.max(1,width);normalH=Math.max(1,height);floatingLeft=x;floatingTop=Math.max(0,y-safeTop);fitToHost();saveGeometry();}
     String caption(){return titleLabel.getText().toString();}
-    void caption(String title){titleLabel.setText(title);titleLabel.setContentDescription(title+". Drag to move window.");}
+    void caption(String title){titleLabel.setText(title);titleLabel.setContentDescription(title+". Drag to move window.");helpButton.setVisibility(title.contains("Properties")?VISIBLE:GONE);}
     boolean minimizing(){return minimizing;}
     boolean active(){return active;}
-    void active(boolean value){active=value;glass.active(value);titleLabel.setTextColor(XpTheme.titleInk(getContext()));titleLabel.setShadowLayer(0,0,0,0);minimizeButton.setAlpha(value?1:.65f);maximizeButton.setAlpha(value?1:.65f);closeButton.setAlpha(value?1:.6f);}
+    void active(boolean value){active=value;glass.active(value);titleLabel.setTextColor(value?XpTheme.titleInk(getContext()):XpTheme.scheme(getContext())==2?0xff56596c:0xffe1e8f7);titleLabel.setShadowLayer(0,0,0,0);for(TextView button:new TextView[]{minimizeButton,maximizeButton,helpButton,closeButton})((WindowButton)button).active(value);}
     @Override public boolean dispatchTouchEvent(MotionEvent e){if(peeking)return true;if(e.getActionMasked()==MotionEvent.ACTION_DOWN&&!minimizing){bringToFront();changed.run();}return super.dispatchTouchEvent(e);}
     private int cornerReach(){return Aero.dp(getContext(),22);}
     private int resizeCornerAt(float x,float y){

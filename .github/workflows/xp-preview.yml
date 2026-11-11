@@ -37,6 +37,7 @@ jobs:
           path: |
             app/build/test-results/
             app/build/xp-rendered/
+            app/build/xp-upgrade-rendered/
   native:
     needs: build
     runs-on: ubuntu-latest

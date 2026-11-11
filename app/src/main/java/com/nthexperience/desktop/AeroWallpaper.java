@@ -35,14 +35,14 @@ final class AeroWallpaper extends View {
     private final int[] ownLocation=new int[2],targetLocation=new int[2];
     AeroWallpaper(Context context,int theme){this(context,theme,true);}
     AeroWallpaper(Context context, int theme,boolean following) { super(context); this.theme = theme;this.following=following;
-        if(artwork==null){try{artwork=BitmapFactory.decodeStream(context.getAssets().open("wallpapers/aero-aurora.webp"));}catch(java.io.IOException ignored){}} if(wideArtwork==null){try{wideArtwork=BitmapFactory.decodeStream(context.getAssets().open("wallpapers/aero-aurora-landscape.webp"));}catch(java.io.IOException ignored){}} setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);if(following)reload(); }
+ setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);if(following)reload(); }
     void theme(int value) { if(following)reload();else theme=value;softened=null;appearanceChanged(); }
     void appearanceChanged(){invalidate();for(java.util.Iterator<java.lang.ref.WeakReference<AeroGlass>> i=surfaces.iterator();i.hasNext();){AeroGlass glass=i.next().get();if(glass==null)i.remove();else glass.invalidateSelf();}}
     void register(AeroGlass glass){surfaces.add(new java.lang.ref.WeakReference<>(glass));}
     @Override protected void onDraw(Canvas c) {
         float w = getWidth(), h = getHeight();
         if(photo!=null&&!photo.isRecycled()){drawPhoto(c,w,h);return;}
-        if(XpWallpapers.contains(theme)){Bitmap image=XpWallpapers.image(getContext(),theme,!following&&getWidth()<Aero.dp(getContext(),240));if(image!=null){drawPicture(c,w,h,image,image.getWidth(),image.getHeight());return;}}
+        if(XpWallpapers.contains(theme)){Bitmap image=XpWallpapers.image(getContext(),theme,!following&&getWidth()<Aero.dp(getContext(),240),getWidth(),getHeight());if(image!=null){drawPicture(c,w,h,image,image.getWidth(),image.getHeight());return;}}
         if(theme==SEVEN){xpLandscape.draw(c,w,h);return;}
         if(theme>SEVEN&&theme<DesktopBackgrounds.NAMES.length){scenery.draw(c,w,h,theme);return;}
         if(artwork!=null){

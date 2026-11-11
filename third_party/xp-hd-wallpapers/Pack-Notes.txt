@@ -1,0 +1,55 @@
+Wallpapers (including Plus!/MCE):
+All of these were taken from Getty Images except:
+- Ascent. This was on Corbis and then taken down from Getty Images, but it is still available on a French stock photo site called Photononshop. Fortunately a full res copy from that site has surfaced.
+- Autumn. This was on Corbis and then taken down from Getty Images, but it is still available on a French stock photo site called Photononshop. As it was so sought after but not available in high res anywhere else (apart from fan-edited versions of Peter Burian's personal copy), I started a fundraiser to buy it and look where we are now. (there is also a vertical shot which I'd much rather use for the 1200x1920 version, but I'd need to buy that too)
+- Bliss. Although Microsoft had bought the rights to it in 2000, meaning it could no longer be sold as a stock photo, Fujitsu at some point uploaded a full res .tiff of Bliss, which has made its way to many sites.
+- Follow. This was taken down from Corbis at some point before 2014, though a high res version has been found. 
+- Note that the colors of Tulips, Vortec space and Wind are slightly off. This seems to be due to them using Corbis RGB, which Getty's previewer doesn't seem to handle well. Stonehenge also appears to have been rescanned by Getty Images, hence it looks brighter.
+- Moon flower is cropped from the original image which is still available on Getty. Getting the high/full res version of the actual wallpaper would be much harder because it was made by an unknown contracted designer specifically for XP.
+
+The following are not present:
+- Crystal, Moon flower (the actual version), Peace, Power, Ripple. According to Gregory Raiz, who worked on Windows XP, these were made by contracted designers specifically for XP.
+- Home. I'm pretty sure this isn't a stock photo, due to its original filename ("la_casa") not being a stock photo ID. I have no clue who took it. 
+- Purple flower. This was on Corbis, though the photographer's contract was not transferred over to Getty/VCG and therefore no high/full res version is available at least for the original version. Andy Small, the photographer, still has a copy but it looks different from the original version and he stopped responding to my emails. 
+- Windows XP. Created by or for Microsoft, and they have not released a high res version. 
+- Plus! Nature, Plus! Nature2, Plus! Space2, Plus! daVinci. Nature was taken down from Getty, while Nature2 and Space2 have unknown origins. Most likely taken down from Getty before TinEye started indexing it. daVinci was likely made by Microsoft themselves.
+
+Party Mode:
+- Mostly taken from Getty Images.
+- The 4 digit number in the filenames corresponds with the horizontal resolution.
+- Nature's A wallpaper was taken directly from a PhotoDisc CD for higher quality.
+- Nature's C wallpaper was taken down so it's not present.
+- Frost's 1st and 4th wallpapers were taken down, although they have been taken from a Corbis CD.
+- Frost's 3rd wallpaper was taken down too. A slightly different colored version of Frost's 4th wallpaper is on Alamy though I don't fancy buying it for now.
+
+Sample Pictures:
+- Sunset, Freestyle, Overlooking Rio and Surf were taken from Getty Images.
+- Blue hills, Water lilies and Winter were taken down from Getty, but I was luckily able to find the full res originals on Corbis CDs.
+- At the Arch and Big Wave were taken from Corbis CD torrents.
+- The remaining MCE and Beta sample pictures are unavailable in HQ.
+
+Scanner & Camera Wizard: 
+- Taken from Getty Images.
+- The wizard only has one small graphic of marigolds, which is included here albeit in color. 
+
+Starter Edition:
+- All taken from Getty Images.
+- A few of these are still available, but not included due to their vertical aspect ratios, so when downloading from ZeonDownloader they are not wide enough but too tall.
+- Some are also not included due to them originally being panoramic, so they aren't tall enough at 2048px from ZeonDownloader.
+- And as usual, some of these also got taken down from Getty. Some were on Corbis and never made it to Getty.
+- Cerros_Torre_y_Fitz_Roy and Peter_the_Great also come with alternate versions. 
+- The Uruguay, Thailand and Indonesia wallpapers haven't surfaced, so their filenames aren't known, so I went with their Getty names. I found them by reverse searching wallpapers edited from screenshots of people using these. On top of that, we don't even know what most of the wallpapers in undumped version look like.
+- A few of the graphics from the tutorials are also included here in wallpaper form.
+
+User Account Pictures:
+- Mostly taken from Getty Images, except airplane which I found on a Corbis CD, astronaut I cropped it from a high res version found through reverse searching (it's a very common photo) and ball was bought from Can Stock Photo (although it originates from Corbis/Westlight but no longer available anywhere else)
+- Quite a few of these are no longer available from Getty. Some of them, just like some of Starter Edition's wallpapers, are too tall and not wide enough to be cropped to 1920x1200.
+- The Guitar one has a shadow and grey backdrop added in XP. The one here lacks this. 
+
+Fun Packs: 
+- Mostly taken from Getty Images.
+- The 2003 wallpapers are the same pictures used in the XP MCE Party Mode Frost skin, but with different names.
+- The card templates and Windows Movie Maker backgrounds have been lumped into the same folder for simplicity (yes I even included the 50's life card template background). 
+- Unlike on the ones Microsoft used, no text is present on these. 
+- Ones that are not present were either taken down or not large enough to be cropped due to them being vertical. 
+- Half of the 2004 wallpapers are here; the other half were not transferred to Getty. 

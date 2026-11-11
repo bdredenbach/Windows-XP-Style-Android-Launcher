@@ -1,0 +1,121 @@
+[
+  {
+    "id": "bliss",
+    "source": "Bliss (3840x2160).jpg",
+    "asset": "bliss.jpg",
+    "width": 3840,
+    "height": 2160
+  },
+  {
+    "id": "bliss",
+    "source": "Bliss (1200x1920).jpg",
+    "asset": "bliss-portrait.jpg",
+    "width": 1200,
+    "height": 1920
+  },
+  {
+    "id": "ascent",
+    "source": "Ascent (3840x2160).jpg",
+    "asset": "ascent.jpg",
+    "width": 3840,
+    "height": 2160
+  },
+  {
+    "id": "ascent",
+    "source": "Ascent (1200x1920).jpg",
+    "asset": "ascent-portrait.jpg",
+    "width": 1200,
+    "height": 1920
+  },
+  {
+    "id": "autumn",
+    "source": "Autumn (3840x2160).jpg",
+    "asset": "autumn.jpg",
+    "width": 3840,
+    "height": 2160
+  },
+  {
+    "id": "autumn",
+    "source": "Autumn (1200x1920).jpg",
+    "asset": "autumn-portrait.jpg",
+    "width": 1200,
+    "height": 1920
+  },
+  {
+    "id": "azul",
+    "source": "Azul (3840x2160).jpg",
+    "asset": "azul.jpg",
+    "width": 3840,
+    "height": 2160
+  },
+  {
+    "id": "azul",
+    "source": "Azul (1200x1920).jpg",
+    "asset": "azul-portrait.jpg",
+    "width": 1200,
+    "height": 1920
+  },
+  {
+    "id": "follow",
+    "source": "Follow.jpg",
+    "asset": "follow.jpg",
+    "width": 1920,
+    "height": 1200
+  },
+  {
+    "id": "friend",
+    "source": "Friend.jpg",
+    "asset": "friend.jpg",
+    "width": 1920,
+    "height": 1200
+  },
+  {
+    "id": "radiance",
+    "source": "Radiance.jpg",
+    "asset": "radiance.jpg",
+    "width": 1920,
+    "height": 1200
+  },
+  {
+    "id": "radiance",
+    "source": "Radiance (1200x1920).jpg",
+    "asset": "radiance-portrait.jpg",
+    "width": 1200,
+    "height": 1920
+  },
+  {
+    "id": "red-moon-desert",
+    "source": "Red moon desert.jpg",
+    "asset": "red-moon-desert.jpg",
+    "width": 1920,
+    "height": 1200
+  },
+  {
+    "id": "stonehenge",
+    "source": "Stonehenge (Getty Images Rescan).jpg",
+    "asset": "stonehenge.jpg",
+    "width": 1920,
+    "height": 1200
+  },
+  {
+    "id": "tulips",
+    "source": "Tulips.jpg",
+    "asset": "tulips.jpg",
+    "width": 1920,
+    "height": 1200
+  },
+  {
+    "id": "vortec-space",
+    "source": "Vortec space.jpg",
+    "asset": "vortec-space.jpg",
+    "width": 1920,
+    "height": 1200
+  },
+  {
+    "id": "wind",
+    "source": "Wind.jpg",
+    "asset": "wind.jpg",
+    "width": 1920,
+    "height": 1200
+  }
+]

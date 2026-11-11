@@ -7,7 +7,7 @@ import android.graphics.Color;
 import android.view.*;
 import android.widget.*;
 
-/** Shared Vista caption, command buttons and list surface; Android retains dialog semantics. */
+/** Shared XP caption, command buttons and list surface; Android retains dialog semantics. */
 final class VistaDialog extends AlertDialog.Builder {
     private final Context context;
     private CharSequence caption;
@@ -20,9 +20,9 @@ final class VistaDialog extends AlertDialog.Builder {
     @Override public AlertDialog create(){
         final AlertDialog[] owner=new AlertDialog[1];
         if(!customTitle&&caption!=null){
-            LinearLayout bar=new LinearLayout(context);bar.setGravity(Gravity.CENTER_VERTICAL);bar.setPadding(Aero.dp(context,12),0,Aero.dp(context,5),0);bar.setContentDescription("Vista dialog caption");
-            bar.setBackground(Aero.gloss(context,new int[]{0xffe5f3fa,0xffcfdfeb,0xffbdd2e1,0xffdceaf3},4,0xff92acbf));
-            TextView title=Aero.text(context,caption.toString(),14,0xff142c40);Aero.bold(title);title.setMaxLines(2);title.setEllipsize(android.text.TextUtils.TruncateAt.END);bar.addView(title,new LinearLayout.LayoutParams(0,Aero.dp(context,XpMetrics.CAPTION),1));
+            LinearLayout bar=new LinearLayout(context);bar.setGravity(Gravity.CENTER_VERTICAL);bar.setPadding(Aero.dp(context,12),0,Aero.dp(context,5),0);bar.setContentDescription("XP dialog caption");
+            bar.setBackground(XpTheme.chrome(context,AeroGlass.TASKBAR));
+            TextView title=Aero.text(context,caption.toString(),14,XpTheme.titleInk(context));Aero.bold(title);title.setSingleLine();title.setEllipsize(android.text.TextUtils.TruncateAt.END);bar.addView(title,new LinearLayout.LayoutParams(0,Aero.dp(context,XpMetrics.CAPTION),1));
             if(cancelable){TextView close=new WindowButton(context,"×",()->{if(owner[0]!=null)owner[0].cancel();});close.setTextSize(22);close.setContentDescription("Close dialog");close.setMinHeight(0);close.setPadding(0,0,0,0);close.setTextColor(Color.WHITE);bar.addView(close,new LinearLayout.LayoutParams(Aero.dp(context,40),Aero.dp(context,32)));}
             super.setCustomTitle(bar);
         }

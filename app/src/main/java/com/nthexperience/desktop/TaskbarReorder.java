@@ -52,7 +52,9 @@ final class TaskbarReorder {
         return result;
     }
     boolean dragging(){return active!=null;}
+    private boolean locked(){return items.getContext().getSharedPreferences("desktop",0).getBoolean(XpTaskbarAutoHide.LOCK,false);}
     boolean begin(View button){
+        if(locked())return false;
         String id=key(button);
         if(closed||active!=null||id==null||(!expanded()&&keys().size()<2))return false;
         if(expanded())((TaskbarItems)items).reordering(true);
@@ -64,7 +66,7 @@ final class TaskbarReorder {
     boolean expanded(){return items instanceof TaskbarItems&&((TaskbarItems)items).expanded;}
     private View button(String id){for(int i=0;i<items.getChildCount();i++)if(id.equals(key(items.getChildAt(i))))return items.getChildAt(i);return null;}
     boolean move(String id,int delta){
-        if(closed||active!=null)return false;
+        if(closed||locked()||active!=null)return false;
         List<String> current=keys();
         if(expanded()){
             View source=button(id);if(source==null)return false;List<String> row=new ArrayList<>();for(String key:current)if(TaskbarItems.row(button(key))==TaskbarItems.row(source))row.add(key);
@@ -75,7 +77,7 @@ final class TaskbarReorder {
         finished.accept(TaskbarOrder.move(current,id,index+delta));return true;
     }
     boolean moveRow(String id,int row){
-        if(closed||active!=null||!expanded()||button(id)==null||row<0||row>1)return false;
+        if(closed||locked()||active!=null||!expanded()||button(id)==null||row<0||row>1)return false;
         TaskbarRows.save(items.getContext().getSharedPreferences("desktop",0),id,row);finished.accept(keys());return true;
     }
     private boolean drag(DragEvent event){

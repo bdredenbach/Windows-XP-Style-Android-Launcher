@@ -1,9 +1,25 @@
 # Nth Desktop XP
 
-An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.4.0**.
+An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.5.0**.
 
 Android 8.0 or newer. Target SDK 36. Application ID: `com.nthexperience.desktop.xp`.
 It installs alongside Vista, Seven, Eight, Ten and Eleven.
+
+## HD wallpapers and XP shell details — 0.5.0
+
+Twelve HD wallpapers and five portrait alternatives retain your saved background
+choices. Captions use the bundled bold font, property windows offer Help, and
+inactive controls and shared dialogs follow XP styling. Turn Off, Log Off and
+Welcome use XP-style panels with the real Android action written beside each
+command.
+
+Taskbar Properties and the hold menu now offer Lock and Auto-hide. Revealing the
+bar overlays the desktop without moving windows or changing either row's scroll
+position. Optional language/removable-storage indicators and low-battery balloons
+complete the notification-area pass. New preferences are included in portable
+backups. Old Aurora images and unused Selawik fonts are removed from the APK.
+
+[Scope, provenance and validation](docs/XP_0_5_SHELL_UPGRADE.md).
 
 ## XP guide polish — 0.4.0
 

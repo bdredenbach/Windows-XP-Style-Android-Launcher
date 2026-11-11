@@ -21,7 +21,7 @@ final class Aero {
         return regular;
     }
     static Typeface strong(Context c){
-        if(semibold==null){try{semibold=Typeface.create(face(c),Typeface.BOLD);}catch(RuntimeException e){semibold=Typeface.create(face(c),Typeface.BOLD);}}
+        if(semibold==null){try{semibold=c.getResources().getFont(R.font.xp_bold);}catch(RuntimeException e){semibold=Typeface.create(face(c),Typeface.BOLD);}}
         return semibold;
     }
     static GradientDrawable panel(Context c,int top,int bottom,int radius,int stroke){
