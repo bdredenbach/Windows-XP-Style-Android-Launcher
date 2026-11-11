@@ -35,6 +35,13 @@ public class TaskbarRowsTest {
     @Test public void rowChoicesExportAndActuallyRestore()throws Exception{
         TaskbarRows.save(store.prefs,"@notes",1);DesktopBackup.Plan plan=DesktopBackup.parse(DesktopBackup.snapshot(store).toString());store.prefs.edit().remove(TaskbarRows.KEY).commit();DesktopBackup.apply(context,store,plan,false);assertEquals(Integer.valueOf(1),TaskbarRows.read(store.prefs).get("@notes"));
     }
+    @Test public void dragAutoscrollIgnoresFocusRevealInTheOtherRow(){
+        TaskbarItems items=new TaskbarItems(context,true);slot(items,"top-first",true);View topLast=slot(items,"top-last",true);View bottom=slot(items,"bottom",false);slot(items,"bottom-last",false);
+        items.bottomBounds(20,180,200);items.measure(View.MeasureSpec.makeMeasureSpec(200,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(2*XpMetrics.ROW,View.MeasureSpec.EXACTLY));items.layout(0,0,200,2*XpMetrics.ROW);
+        items.reordering(true);int before=topLast.getLeft();assertFalse(items.requestChildRectangleOnScreen(topLast,new android.graphics.Rect(0,0,topLast.getWidth(),topLast.getHeight()),true));assertEquals(0,items.rowScroll(0));
+        assertTrue(items.scrollRowBy(1,40));assertEquals(before,topLast.getLeft());assertEquals(-20,bottom.getLeft());
+        items.reordering(false);assertTrue(items.requestChildRectangleOnScreen(topLast,new android.graphics.Rect(0,0,topLast.getWidth(),topLast.getHeight()),true));assertTrue(items.rowScroll(0)>0);
+    }
     @Test public void olderAndOtherVariantBackupsRemainAccepted()throws Exception{
         JSONObject backup=DesktopBackup.snapshot(store);backup.getJSONObject("settings").remove(TaskbarRows.KEY);DesktopBackup.parse(backup.toString());backup.put("variant","eight");DesktopBackup.parse(backup.toString());
     }

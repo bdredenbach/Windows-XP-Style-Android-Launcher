@@ -9,7 +9,7 @@ import java.util.Map;
 /** Two independent horizontal viewports, sharing stable task identities and drag/drop. */
 final class TaskbarItems extends LinearLayout {
     boolean expanded;
-    private boolean touching;
+    private boolean touching,reordering;
     boolean touching(){return touching;}
     private int bottomOffset,bottomEnd=Integer.MAX_VALUE,viewport;
     private final int[] rowWidth={0,0},rowScroll={0,0};
@@ -37,6 +37,7 @@ final class TaskbarItems extends LinearLayout {
     boolean scrollRowBy(int row,int delta){return scrollRowTo(row,rowScroll[row]+delta);}
     boolean scrollRowTo(int row,int value){int next=scrollable?Math.max(0,Math.min(rowRange(row),value)):0;if(next==rowScroll[row])return false;rowScroll[row]=next;layoutRows();invalidate();return true;}
     void stopScrolling(){for(OverScroller scroller:fling)scroller.abortAnimation();}
+    void reordering(boolean value){reordering=value;if(value){stopScrolling();recycleVelocity();panning=false;}}
     int[] scrollPositions(){return rowScroll.clone();}
     void restoreScroll(int[] positions){if(positions!=null&&positions.length==2){rowScroll[0]=positions[0];rowScroll[1]=positions[1];requestLayout();}}
     int singleRowWidth(){int total=0;for(int i=0;i<getChildCount();i++){View child=getChildAt(i);if(child.getVisibility()==GONE)continue;LinearLayout.LayoutParams p=(LinearLayout.LayoutParams)child.getLayoutParams();total+=(p instanceof Slot?((Slot)p).preferredWidth:p.width)+p.rightMargin;}return total;}
@@ -89,7 +90,7 @@ final class TaskbarItems extends LinearLayout {
     @Override public boolean performClick(){return super.performClick();}
     @Override public boolean onGenericMotionEvent(MotionEvent event){if(expanded&&scrollable&&event.getAction()==MotionEvent.ACTION_SCROLL){float axis=event.getAxisValue(MotionEvent.AXIS_HSCROLL);if(axis==0)axis=event.getAxisValue(MotionEvent.AXIS_VSCROLL);return scrollRowBy(rowAt(event.getY()),Math.round(-axis*Aero.dp(getContext(),XpMetrics.ROW)));}return super.onGenericMotionEvent(event);}
     @Override public void computeScroll(){super.computeScroll();if(!expanded)return;boolean active=false;for(int row=0;row<2;row++)if(fling[row].computeScrollOffset()){scrollRowTo(row,fling[row].getCurrX());active=true;}if(active)postInvalidateOnAnimation();}
-    @Override public void requestChildFocus(View child,View focused){super.requestChildFocus(child,focused);if(expanded)post(()->{if(child.getParent()==this&&child.hasFocus())requestChildRectangleOnScreen(child,new android.graphics.Rect(0,0,child.getWidth(),child.getHeight()),true);});}
-    @Override public boolean requestChildRectangleOnScreen(View child,android.graphics.Rect rect,boolean immediate){if(expanded){int row=row(child),left=child.getLeft()+rect.left,right=child.getLeft()+rect.right;int dx=left<rowStart(row)?left-rowStart(row):right>rowEnd(row)?right-rowEnd(row):0;return scrollRowBy(row,dx);}return super.requestChildRectangleOnScreen(child,rect,immediate);}
+    @Override public void requestChildFocus(View child,View focused){super.requestChildFocus(child,focused);if(expanded&&!reordering)post(()->{if(!reordering&&child.getParent()==this&&child.hasFocus())requestChildRectangleOnScreen(child,new android.graphics.Rect(0,0,child.getWidth(),child.getHeight()),true);});}
+    @Override public boolean requestChildRectangleOnScreen(View child,android.graphics.Rect rect,boolean immediate){if(expanded){if(reordering)return false;int row=row(child),left=child.getLeft()+rect.left,right=child.getLeft()+rect.right;int dx=left<rowStart(row)?left-rowStart(row):right>rowEnd(row)?right-rowEnd(row):0;return scrollRowBy(row,dx);}return super.requestChildRectangleOnScreen(child,rect,immediate);}
     @Override protected void onDetachedFromWindow(){touching=false;stopScrolling();recycleVelocity();super.onDetachedFromWindow();}
 }

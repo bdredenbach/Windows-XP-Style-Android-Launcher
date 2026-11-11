@@ -55,10 +55,10 @@ final class TaskbarReorder {
     boolean begin(View button){
         String id=key(button);
         if(closed||active!=null||id==null||(!expanded()&&keys().size()<2))return false;
-        if(expanded())((TaskbarItems)items).stopScrolling();
+        if(expanded())((TaskbarItems)items).reordering(true);
         Move move=new Move(this,button,id);active=move;int[] start=new int[2];button.getLocationOnScreen(start);rawX=start[0]+button.getWidth()/2f;rawY=start[1]+button.getHeight()/2f;
         boolean started=button.startDragAndDrop(ClipData.newPlainText("taskbar-order",id),new View.DragShadowBuilder(button),move,0);
-        if(!started){active=null;return false;}
+        if(!started){active=null;if(expanded())((TaskbarItems)items).reordering(false);return false;}
         hovering=true;button.setAlpha(.4f);main.post(autoscroll);return true;
     }
     boolean expanded(){return items instanceof TaskbarItems&&((TaskbarItems)items).expanded;}
@@ -135,6 +135,7 @@ final class TaskbarReorder {
     private void finish(Move move,boolean accepted){
         if(move.ended)return;move.ended=true;move.source.setAlpha(1);
         hovering=false;main.removeCallbacks(autoscroll);removeMarker();if(active==move)active=null;
+        if(expanded())((TaskbarItems)items).reordering(false);
         List<String> order=accepted?move.order:null;
         if(accepted&&move.row!=null)TaskbarRows.save(items.getContext().getSharedPreferences("desktop",0),move.id,move.row);
         if(!closed)items.post(()->{if(!closed)finished.accept(order);});
