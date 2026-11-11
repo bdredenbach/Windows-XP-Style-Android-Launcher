@@ -8,7 +8,7 @@ import java.util.*;
 
 /** Shortcut editing plus a separate, explicit Android app-uninstall command. */
 final class ShortcutMenus {
-    interface Host {void open(String id);void rename(String id);void changed();}
+    interface Host {void open(String id);void rename(String id);void changed();default void sortStart(){}}
     static void show(android.content.Context context,View anchor,float x,float y,DesktopStore store,String id,String source,String name,Host host){
         DesktopContextMenu menu=new DesktopContextMenu(context,"Shortcut context menu");menu.item("Open","programs",()->host.open(id));menu.separator();
         boolean inSource=ExplorerClipboard.members(store,source).contains(id);

@@ -37,6 +37,7 @@ final class XpStartMenus {
             ContextMenus.show(send,anchor,x,y);
         });
         if(!place&&source.equals(HOME)&&store.startPins().contains(id))menu.item("Cut","empty",()->{ExplorerClipboard.shortcuts(Collections.singletonList(id),"start-pins",true);});
+        if(source.equals(PROGRAMS))menu.item("Cut","empty",()->{ExplorerClipboard.shortcuts(Collections.singletonList(id),"start-programs",true);});
         menu.item("Copy","empty",()->{ExplorerClipboard.shortcuts(Collections.singletonList(id),"start-pins",false);});
         if(store.isFolder(id))menu.item("Paste","empty",!ExplorerClipboard.shortcuts.isEmpty(),()->ShortcutMenus.paste(c,store,"contents:"+id,host));
         if(!place){
@@ -44,6 +45,7 @@ final class XpStartMenus {
             if(source.equals(HOME))menu.item("Remove from This List","empty",()->{remove(store,id,false);host.changed();});
             else menu.item("Delete","empty",()->Aero.dialog(c).setTitle("Confirm Shortcut Delete").setMessage("Remove "+name+" from the Start menu? The app, desktop shortcut and folder contents will be kept.").setPositiveButton("Delete",(d,w)->{remove(store,id,true);host.changed();}).setNegativeButton("Cancel",null).show());
             menu.item("Rename…","empty",()->host.rename(id));
+            if(source.equals(PROGRAMS))menu.item("Sort by Name","empty",host::sortStart);
         }
         if(place&&Arrays.asList("@computer","@documents","@pictures","@music").contains(id))menu.checked("Show on Desktop",store.pinned(id),()->{store.toggle(id);host.changed();});
         menu.separator();
@@ -75,7 +77,7 @@ final class XpStartMenus {
     private static void recent(DesktopContextMenu menu,Context c,DesktopStore store,String id,String name,ShortcutMenus.Host host){
         String uri=id.startsWith("recent-file:")?id.substring(12):"";
         menu.separator();menu.item("Remove from This List","empty",()->{JSONArray old=RecentFiles.list(store),kept=new JSONArray();for(int i=0;i<old.length();i++){JSONObject file=old.optJSONObject(i);if(file!=null&&!uri.equals(file.optString("uri")))kept.put(file);}store.prefs.edit().putString("recent_files",kept.toString()).apply();host.changed();});
-        menu.item("Properties","empty",()->{JSONObject file=RecentFiles.get(store,uri);Aero.dialog(c).setTitle(name+" Properties").setMessage(file==null?"This recent item is no longer available.":"Name: "+file.optString("name")+"\nType: "+file.optString("mime",file.optString("kind","Document"))+"\nLocation: "+uri).setPositiveButton("OK",null).show();});
+        menu.item("Properties","empty",()->{JSONObject file=RecentFiles.get(store,uri);Aero.dialog(c).setTitle((file==null?"Recent Document":file.optString("name",name))+" Properties").setMessage(file==null?"This recent item is no longer available.":"Name: "+file.optString("name")+"\nType: "+file.optString("mime",file.optString("kind","Document"))+"\nLocation: "+uri).setPositiveButton("OK",null).show();});
     }
     private static void properties(Context c,DesktopStore store,String id,String name){
         String pkg=AppUninstaller.packageName(id);String detail="Type: "+(store.isFolder(id)?"App folder":"Shortcut")+"\nName: "+name;

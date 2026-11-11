@@ -63,6 +63,9 @@ public class XpStartContextTest {
         store.startPins(Arrays.asList(APP,"@notes"));menu(APP,XpStartMenus.HOME);click("Copy");ExplorerClipboard.paste(store,"desktop");assertTrue(store.pinned(APP));assertTrue(store.startPins().contains(APP));
         menu(APP,XpStartMenus.HOME);click("Cut");String folder=store.createFolder("Tools",Collections.emptyList());ExplorerClipboard.paste(store,"contents:"+folder);assertFalse(store.startPins().contains(APP));assertTrue(store.startPins().contains("@notes"));assertTrue(store.pinned(APP));assertEquals(Collections.singletonList(APP),store.folderItems(folder));
     }
+    @Test public void allProgramsCutMovesOnlyTheStartShortcutAfterSuccessfulPaste(){
+        menu(APP,XpStartMenus.PROGRAMS);click("Cut");assertFalse(store.startDeleted().contains(APP));ExplorerClipboard.paste(store,"desktop");assertTrue(store.pinned(APP));assertTrue(store.startDeleted().contains(APP));assertTrue(AppUninstaller.available(activity,APP));
+    }
     @Test public void myComputerHasSystemCommandsAndSettingsLinksHaveNoShortcutDeletion(){
         assertTrue(find(start,"My Computer").performLongClick());assertEquals(XpStartMenus.PLACE,selectedSource);assertNotNull(command("Explore"));assertNotNull(command("Manage"));assertNull(find(popup().getContentView(),"Delete"));click("Properties");assertEquals("@system",opened);
         assertTrue(find(start,"Connect To").performContextClick());click("Open");assertEquals("setting:android:network",opened);

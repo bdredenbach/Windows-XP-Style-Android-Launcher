@@ -25,7 +25,7 @@ Primary references:
   hold, secondary mouse button, context-click and Menu-key binding. A hold does
   not launch the selected program. Touch scrolling remains native.
 - Send To > Desktop (create shortcut) is idempotent. Copy uses the existing
-  launcher clipboard. Cut on a stored Start pin moves only that pin when pasted
+  launcher clipboard. Cut in All Programs or on a stored Start pin moves only that shortcut when pasted
   onto the desktop or into an app folder. Custom app folders also accept Paste.
 - Pin adds/removes a Start pin. Unpin allows an ordinary app to remain in recent
   programs. Remove from This List suppresses it from the home list only.

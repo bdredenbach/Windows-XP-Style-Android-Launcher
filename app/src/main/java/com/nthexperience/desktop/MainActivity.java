@@ -805,6 +805,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         ContextMenus.centered(anchor,(x,y)->XpStartMenus.show(this,startMenu,x,y,store,id,source,label(id),new ShortcutMenus.Host(){
             public void open(String value){MainActivity.this.open(value);}
             public void rename(String value){startMenu.hide();organizer("@organize","rename:"+value);}
+            public void sortStart(){startMenu.sortPrograms();}
             public void changed(){desktopChanged();}
         }));
     }

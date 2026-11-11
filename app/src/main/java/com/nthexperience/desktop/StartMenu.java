@@ -19,7 +19,7 @@ final class StartMenu extends LinearLayout {
     private final BaseAdapter adapter=new ProgramsAdapter();
     private final ListView list;private final LinearLayout profile,searchBox;
     private final EditText search;private final TextView name,programs;
-    private DesktopContextMenu flyout;
+    private DesktopContextMenu flyout;private String programGroup="";
     StartMenu(Context c,Actions actions,DesktopStore store,AeroWallpaper wallpaper){
         super(c);this.actions=actions;this.store=store;setOrientation(VERTICAL);setElevation(Aero.dp(c,8));
         setPadding(Aero.dp(c,2),Aero.dp(c,2),Aero.dp(c,2),Aero.dp(c,2));setBackground(XpTheme.chrome(c,AeroGlass.START));
@@ -93,8 +93,9 @@ final class StartMenu extends LinearLayout {
         });
     }
     private void commandOptions(View anchor,String title,Runnable action){ContextMenus.centered(anchor,(x,y)->{DesktopContextMenu menu=new DesktopContextMenu(getContext(),"Start command context menu");menu.item(title,"empty",action);ContextMenus.show(menu,this,x,y);});}
+    void sortPrograms(){store.prefs.edit().putBoolean("xp_start_sort",true).apply();programMenu(programs,programGroup);}
     private void programMenu(View anchor,String group){
-        dismissFlyout();flyout=new DesktopContextMenu(getContext(),group.isEmpty()?"All Programs":group,30,250);
+        programGroup=group;dismissFlyout();flyout=new DesktopContextMenu(getContext(),group.isEmpty()?"All Programs":group,30,250);
         if(group.isEmpty()){
             groupItem(flyout,"Accessories");groupItem(flyout,"Games");
             programItem(flyout,MediaLibrary.PLAYER_TITLE,MediaLibrary.PLAYER,"mediaplayer");programItem(flyout,MediaLibrary.CENTER_TITLE,MediaLibrary.CENTER,"mediacenter");flyout.separator();
