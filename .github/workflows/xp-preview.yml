@@ -20,6 +20,13 @@ jobs:
         with:
           packages: 'platform-tools'
       - run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: XP-apk-tools
+          path: |
+            /usr/local/lib/android/sdk/build-tools/35.0.0/lib/apksigner.jar
+            /usr/local/lib/android/sdk/build-tools/35.0.0/zipalign
+            /usr/local/lib/android/sdk/build-tools/35.0.0/lib64/libc++.so
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :fixture:assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
