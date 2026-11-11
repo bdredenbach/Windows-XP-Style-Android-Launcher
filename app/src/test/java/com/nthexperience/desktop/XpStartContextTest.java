@@ -66,6 +66,9 @@ public class XpStartContextTest {
     @Test public void allProgramsCutMovesOnlyTheStartShortcutAfterSuccessfulPaste(){
         menu(APP,XpStartMenus.PROGRAMS);click("Cut");assertFalse(store.startDeleted().contains(APP));ExplorerClipboard.paste(store,"desktop");assertTrue(store.pinned(APP));assertTrue(store.startDeleted().contains(APP));assertTrue(AppUninstaller.available(activity,APP));
     }
+    @Test public void desktopPinRestoresAProgramPreviouslyRemovedFromStart(){
+        XpStartMenus.remove(store,APP,true);ShortcutMenus.show(activity,start,30,120,store,APP,"desktop","Test app",host);click("Pin to Start Menu");assertTrue(store.startPins().contains(APP));assertFalse(store.startExcluded().contains(APP));assertFalse(store.startDeleted().contains(APP));assertNotNull(find(start,"Open Programs: Test app"));
+    }
     @Test public void myComputerHasSystemCommandsAndSettingsLinksHaveNoShortcutDeletion(){
         assertTrue(find(start,"My Computer").performLongClick());assertEquals(XpStartMenus.PLACE,selectedSource);assertNotNull(command("Explore"));assertNotNull(command("Manage"));assertNull(find(popup().getContentView(),"Delete"));click("Properties");assertEquals("@system",opened);
         assertTrue(find(start,"Connect To").performContextClick());click("Open");assertEquals("setting:android:network",opened);
