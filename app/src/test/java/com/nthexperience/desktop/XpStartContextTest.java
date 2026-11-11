@@ -30,12 +30,12 @@ public class XpStartContextTest {
         start=new StartMenu(activity,new StartMenu.Actions(){public void open(String id){opened=id;}public void options(View v,String id){options(v,id,XpStartMenus.HOME);}public void options(View v,String id,String source){selectedSource=source;ContextMenus.centered(v,(x,y)->XpStartMenus.show(activity,start,x,y,store,id,source,id,host));}public void home(){}public void settings(){}public boolean isHome(){return true;}},store,wallpaper);
         root.addView(start,new FrameLayout.LayoutParams(390,620));start.entries(Collections.singletonList(new AppCatalog.Entry(APP,"Test app",new ColorDrawable())));layout();start.show(false);
     }
-    void layout(){root.measure(View.MeasureSpec.makeMeasureSpec(420,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(740,View.MeasureSpec.EXACTLY));root.layout(0,0,420,740);}
+    void layout(){shadowOf(android.os.Looper.getMainLooper()).idle();root.measure(View.MeasureSpec.makeMeasureSpec(420,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(740,View.MeasureSpec.EXACTLY));root.layout(0,0,420,740);}
     @After public void close(){PopupWindow p=shadowOf(RuntimeEnvironment.getApplication()).getLatestPopupWindow();if(p!=null)p.dismiss();start.hide();wallpaper.close();ExplorerClipboard.clear();controller.pause().stop().destroy();}
     View find(View v,String text){if(text.contentEquals(v.getContentDescription()==null?"":v.getContentDescription())||v instanceof TextView&&text.contentEquals(((TextView)v).getText()))return v;if(v instanceof ViewGroup)for(int i=0;i<((ViewGroup)v).getChildCount();i++){View child=find(((ViewGroup)v).getChildAt(i),text);if(child!=null)return child;}return null;}
     PopupWindow popup(){PopupWindow p=shadowOf(RuntimeEnvironment.getApplication()).getLatestPopupWindow();assertNotNull(p);assertTrue(p.isShowing());return p;}
     View command(String text){View row=find(popup().getContentView(),text);assertNotNull("Missing command "+text,row);return row;}
-    void click(String text){assertTrue(command(text).performClick());}
+    void click(String text){assertTrue(command(text).performClick());layout();}
     void menu(String id,String source){XpStartMenus.show(activity,start,30,120,store,id,source,id,host);}
     @Test public void sendToDesktopIsIdempotentAndNeverRemovesAnExistingShortcut(){
         menu("@notes",XpStartMenus.HOME);click("Send To");click("Desktop (create shortcut)");assertTrue(store.pinned("@notes"));
@@ -55,9 +55,9 @@ public class XpStartContextTest {
         find(start,"All Programs").performClick();click("Accessories");assertTrue(command("Notepad").performLongClick());assertEquals(XpStartMenus.PROGRAMS,selectedSource);assertNull(opened);click("Rename…");assertEquals("@notes",renamed);
     }
     @Test public void programDeleteRequiresConfirmationAndRestoreKeepsOriginalDesktopFolder(){
-        String folder=store.createFolder("My apps",Collections.singletonList(APP));menu(folder,XpStartMenus.PROGRAMS);click("Delete");AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();assertNotNull(dialog);dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();assertTrue(store.startDeleted().isEmpty());
-        menu(folder,XpStartMenus.PROGRAMS);click("Delete");ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();assertTrue(store.isFolder(folder));assertTrue(store.pinned(folder));assertTrue(store.startDeleted().contains(folder));
-        assertTrue(find(start,"All Programs").performLongClick());click("Restore deleted shortcuts…");ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();assertFalse(store.startDeleted().contains(folder));assertNotNull(command("My apps"));assertEquals(Collections.singletonList(APP),store.folderItems(folder));
+        String folder=store.createFolder("My apps",Collections.singletonList(APP));menu(folder,XpStartMenus.PROGRAMS);click("Delete");AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();assertNotNull(dialog);dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();layout();assertTrue(store.startDeleted().isEmpty());
+        menu(folder,XpStartMenus.PROGRAMS);click("Delete");ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();layout();assertTrue(store.isFolder(folder));assertTrue(store.pinned(folder));assertTrue(store.startDeleted().contains(folder));
+        assertTrue(find(start,"All Programs").performLongClick());click("Restore deleted shortcuts…");ShadowAlertDialog.getLatestAlertDialog().getButton(AlertDialog.BUTTON_POSITIVE).performClick();layout();assertFalse(store.startDeleted().contains(folder));assertNotNull(command("My apps"));assertEquals(Collections.singletonList(APP),store.folderItems(folder));
     }
     @Test public void copyAndPinnedCutUseShortcutClipboardAndOnlyMoveTheSelectedStartPin(){
         store.startPins(Arrays.asList(APP,"@notes"));menu(APP,XpStartMenus.HOME);click("Copy");ExplorerClipboard.paste(store,"desktop");assertTrue(store.pinned(APP));assertTrue(store.startPins().contains(APP));
@@ -71,7 +71,7 @@ public class XpStartContextTest {
         assertTrue(find(start,"Connect To").performContextClick());click("Open");assertEquals("setting:android:network",opened);
     }
     @Test public void propertiesShowsRealPackageAndAppInfoAndBuiltinsCannotUninstall(){
-        menu(APP,XpStartMenus.PROGRAMS);click("Properties");AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();assertTrue(shadowOf(dialog).getMessage().toString().contains("example.startapp"));assertTrue(shadowOf(dialog).getMessage().toString().contains("1.2"));dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();assertEquals("package:example.startapp",shadowOf(activity).getNextStartedActivity().getDataString());
+        menu(APP,XpStartMenus.PROGRAMS);click("Properties");AlertDialog dialog=ShadowAlertDialog.getLatestAlertDialog();assertTrue(shadowOf(dialog).getMessage().toString().contains("example.startapp"));assertTrue(shadowOf(dialog).getMessage().toString().contains("1.2"));dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick();layout();assertEquals("package:example.startapp",shadowOf(activity).getNextStartedActivity().getDataString());
         menu("@paint",XpStartMenus.PROGRAMS);assertNull(find(popup().getContentView(),"Uninstall"));
     }
     @Test public void uninstallUsesAndroidConfirmationWithoutDeletingTheStartOrDesktopShortcut(){
@@ -81,6 +81,6 @@ public class XpStartContextTest {
         RecentFiles.opened(store,Uri.parse("content://example/book"),"text/plain","Book.txt");find(start,"My Recent Documents").performClick();assertTrue(command("Book.txt").performLongClick());assertEquals(XpStartMenus.DOCUMENT,selectedSource);assertNull(find(popup().getContentView(),"Uninstall"));click("Remove from This List");assertEquals(0,RecentFiles.list(store).length());assertTrue(store.startDeleted().isEmpty());
     }
     @Test public void startStateAndNewShortcutTargetsRoundTripInDesktopBackup()throws Exception{
-        XpStartMenus.remove(store,APP,true);XpStartMenus.pin(store,"xp:mail",true);store.desktop(Arrays.asList("xp:mail","setting:android:network","xp:run"));store.prefs.edit().putBoolean("xp_start_sort",true).commit();DesktopBackup.Plan plan=DesktopBackup.parse(DesktopBackup.snapshot(store).toString());assertEquals(true,plan.values.get("xp_start_sort"));assertTrue(plan.string("xp_start_deleted","").contains(APP));assertTrue(plan.string("shortcuts","").contains("xp:mail"));
+        XpStartMenus.remove(store,APP,true);XpStartMenus.pin(store,"xp:mail",true);store.desktop(Arrays.asList("xp:mail","setting:android:network","xp:run"));store.prefs.edit().putBoolean("xp_start_sort",true).commit();DesktopBackup.Plan plan=DesktopBackup.parse(DesktopBackup.snapshot(store).toString());assertEquals(true,plan.values.get("xp_start_sort"));assertTrue(DesktopStore.array(new org.json.JSONArray(plan.string("xp_start_deleted","[]"))).contains(APP));assertTrue(plan.string("shortcuts","").contains("xp:mail"));
     }
 }
