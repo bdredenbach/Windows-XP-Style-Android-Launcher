@@ -24,13 +24,17 @@ final class RecyclePanel extends VistaShell {
     RecyclePanel(Context context,DesktopStore store,Actions actions,Runnable changed){
         super(context,store,actions,"Search Recycle Bin");
         this.changed=changed;
-        addCommand("Organize ▾",this::organize);
+
         addCommand("Views ▾",this::views);
         emptyButton=addCommand("Empty Recycle Bin",this::confirmEmpty);
         restoreButton=addCommand("Restore all items",()->{if(selected()==null)restoreAll();else restoreSelected();});
         classicMenu=explorerChrome(this::menu);
-        classicMenu.setVisibility(GONE);
-        useCompactExplorerToolbar();
+        classicMenu.setVisibility(VISIBLE);
+        LinearLayout location=(LinearLayout)address.getParent(),toolbar=(LinearLayout)commands.getParent();toolbar.removeView(search);search.setVisibility(GONE);toolbar.removeView(folders);commands.removeAllViews();
+        for(TextView nav:new TextView[]{back,forward,up}){((ViewGroup)nav.getParent()).removeView(nav);String kind=nav==back?"back":nav==forward?"forward":"up";nav.setText(nav==back?"Back":"");nav.setTextSize(11);nav.setSingleLine(true);XpNavigation image=new XpNavigation(context,kind);image.setBounds(0,0,dp(24),dp(24));nav.setCompoundDrawables(image,null,null,null);nav.setBackground(Aero.selection(context));commands.addView(nav,new LayoutParams(dp(nav==back?68:35),dp(36)));}
+        TextView find=command("Search",()->{search.setVisibility(search.getVisibility()==VISIBLE?GONE:VISIBLE);if(search.getVisibility()==VISIBLE)search.requestFocus();else search.setText("");});commands.addView(find,new LayoutParams(dp(58),dp(36)));commands.addView(folders,new LayoutParams(dp(58),dp(36)));commands.addView(command("Views ▾",this::views),new LayoutParams(dp(58),dp(36)));
+        toolbar.removeView(commands);HorizontalScrollView tools=new HorizontalScrollView(context);tools.setHorizontalScrollBarEnabled(false);tools.addView(commands);toolbar.addView(tools,new LayoutParams(-1,dp(38)));removeView(classicMenu);removeView(toolbar);removeView(location);addView(classicMenu,0);addView(toolbar,1);addView(location,2);addView(search,3,new LayoutParams(-1,dp(32)));classicMenu.setBackgroundColor(XpTheme.surface(context));toolbar.setBackgroundColor(XpTheme.surface(context));location.setBackgroundColor(XpTheme.surface(context));revealNavigationPane();
+        TextView addressLabel=Aero.text(context,"Address",11,Aero.INK);addressLabel.setPadding(dp(5),0,dp(5),0);location.addView(addressLabel,0,new LayoutParams(-2,-1));side.setBackground(Aero.panel(context,0xff7ba2e7,0xff6375d6,0,0));
         content.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{
             if(r-l!=viewWidth){viewWidth=r-l;if(!view.equals("Details"))render();}
         });
@@ -45,6 +49,7 @@ final class RecyclePanel extends VistaShell {
         start("recycle");
         refresh();
     }
+    private void taskLink(LinearLayout body,String label,Runnable click){TextView link=Aero.text(getContext(),label,11,0xff214477);link.setMinHeight(dp(34));link.setPadding(dp(3),dp(5),0,dp(5));link.setBackground(XpControls.menuSelection(getContext()));link.setTextColor(XpControls.menuInk(0xff214477));link.setFocusable(true);link.setOnClickListener(v->click.run());body.addView(link,new LayoutParams(-1,-2));}
     private TextView addCommand(String label,Runnable action){
         TextView button=command(label,action);
         button.setMaxLines(2);
@@ -55,12 +60,8 @@ final class RecyclePanel extends VistaShell {
     @Override void render(){
         if(closed)return;
         if(side.getChildCount()==0){
-            side.addView(Aero.text(getContext(),"Favorite Links",12,0xff425d71));
-            sideLink("Documents",()->actions.open("@documents"));
-            sideLink("Pictures",()->actions.open("@photos"));
-            sideLink("Computer",()->actions.open("@computer"));
-            side.addView(Aero.text(getContext(),"Folders",12,0xff425d71));
-            sideLink("Desktop",()->actions.action("show-desktop"));
+            XpTaskPane tasks=XpTaskPane.add(side,"Recycle Bin Tasks",false);taskLink(tasks.items,"Empty the Recycle Bin",this::confirmEmpty);taskLink(tasks.items,"Restore all items",this::restoreAll);
+            XpTaskPane places=XpTaskPane.add(side,"Other Places",false);taskLink(places.items,"My Documents",()->actions.open("@documents"));taskLink(places.items,"My Computer",()->actions.open("@computer"));taskLink(places.items,"Desktop",()->actions.action("show-desktop"));
         }
         address.setText("Recycle Bin");
         LinearLayout column=Aero.column(getContext());

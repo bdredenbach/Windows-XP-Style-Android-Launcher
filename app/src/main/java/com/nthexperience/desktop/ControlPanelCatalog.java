@@ -5,11 +5,11 @@ import java.util.*;
 /** One owner per setting. Category tasks and search resolve to the same destinations. */
 final class ControlPanelCatalog {
     static final String[][] CATEGORIES={
-        {"system","Performance and Maintenance","computer"},
-        {"network","Network and Internet Connections","network"},{"hardware","Printers and Other Hardware","hardware"},
-        {"programs","Programs","programs"},{"accounts","User Accounts","accounts"},
-        {"appearance","Appearance and Themes","appearance"},{"clock","Date, Time, Language, and Regional Options","clock"},
-        {"accessibility","Accessibility Options","accessibility"}};
+        {"appearance","Appearance and Themes","appearance"},{"hardware","Printers and Other Hardware","printer"},
+        {"network","Network and Internet Connections","network"},{"accounts","User Accounts","accounts"},
+        {"programs","Add or Remove Programs","programs"},{"clock","Date, Time, Language, and Regional Options","clock"},
+        {"audio","Sounds, Speech, and Audio Devices","sound"},{"accessibility","Accessibility Options","accessibility"},
+        {"system","Performance and Maintenance","performance"},{"security","Security Center","security"}};
     static final class Task {
         final String title,description,destination;
         Task(String title,String description,String destination){this.title=title;this.description=description;this.destination=destination;}
@@ -24,30 +24,29 @@ final class ControlPanelCatalog {
     }
     private static Task t(String title,String description,String destination){return new Task(title,description,destination);}
     static final List<Panel> PANELS=Collections.unmodifiableList(Arrays.asList(
-        new Panel("action-center","system","Action Center","security","Review launcher alerts and record steps","open:@actioncenter","Steps Recorder"),
-        new Panel("welcome","system","Welcome Center","orb","Set up your Nth desktop","open:@welcome","Getting started"),
+        new Panel("security-center","security","Security Center","security","Review Android device security","android:security","Security settings"),
+        new Panel("welcome","system","Help and Support","help","Set up your Nth desktop","open:@welcome","Getting started"),
         new Panel("system","system","System","computer","View device, memory and desktop information","page:system","Device information;RAM;processor",t("Task Manager","Switch windows, end a Nth task and view performance","open:@taskmanager"),t("Saved Workspaces","Save and reopen Nth window layouts","open:@workspaces"),t("Recycle Bin","Restore files deleted through Nth Explorer","open:@recycle"),t("Recent Items","Recent documents, pictures and folders","open:@recent")),
-        new Panel("backup","system","Backup and Restore","drive","Save or restore your desktop, folders and notes","open:@backup","Backup and Restore Center"),
+        new Panel("backup","system","Backup","drive","Save or restore your desktop, folders and notes","open:@backup","Desktop backup"),
         new Panel("access","system","File access","files","Set up device access or connect folders","storage-access","permissions;storage access"),
         new Panel("storage","system","Storage","drive","Storage use and device cleanup · Android","android:storage","disk space"),
         new Panel("power","system","Power Options","power","Battery and power saving · Android","android:battery","battery settings"),
         new Panel("security","system","Security settings","security","Screen lock and device security · Android","android:security","lock screen"),
         new Panel("privacy","system","Privacy settings","security","Review privacy controls · Android","android:privacy","privacy permissions"),
-        new Panel("network","network","Network and Sharing Center","network","View network connections · Android","android:network","Network connections;Internet settings",t("Wi-Fi","Choose a wireless network · Android","android:wifi")),
-        new Panel("sound","hardware","Sound","sound","Volume and device sounds · Android","android:sound","audio volume",t("Desktop sound effects","Original optional completion and error cues","page:sounds")),
+        new Panel("network","network","Network Connections","network","View network connections · Android","android:network","Network connections;Internet settings",t("Wi-Fi","Choose a wireless network · Android","android:wifi")),
+        new Panel("sound","audio","Sounds and Audio Devices","sound","Volume and device sounds · Android","android:sound","audio volume",t("Desktop sound effects","Original optional completion and error cues","page:sounds")),
         new Panel("display","hardware","Display Settings","computer","Brightness, display size and rotation · Android","android:display","display brightness",t("Desktop brightness","Adjust Nth or whole-phone brightness","open:@brightness")),
         new Panel("bluetooth","hardware","Bluetooth Devices","hardware","Connect nearby devices · Android","android:bluetooth","Bluetooth devices"),
-        new Panel("programs","programs","Programs and Features","programs","Manage installed Android apps","android:apps","installed applications"),
-        new Panel("defaults","programs","Default Programs","programs","Choose default Android apps","android:defaults","default applications"),
+        new Panel("programs","programs","Add or Remove Programs","programs","Manage installed Android apps","android:apps","installed applications"),
+        new Panel("defaults","programs","Set Program Access and Defaults","programs","Choose default Android apps","android:defaults","default applications"),
         new Panel("managers","programs","File Managers","folderapps","Organize your file manager shortcuts","open:@filemanagers","file manager apps"),
         new Panel("accounts","accounts","User Accounts","accounts","Change your desktop name and profile picture","page:accounts","Change your desktop name;Change your profile picture",t("Device accounts","Manage accounts on your device · Android","android:accounts")),
-        new Panel("personalization","appearance","Display","appearance","Change the appearance and sounds of your desktop","page:personalization","",t("Appearance","Window color and appearance, including glass intensity, transparency and opacity","page:colors"),t("Desktop Background","Choose a stock or personal wallpaper","page:background"),t("Startup and Sounds","Startup intro, reboot, chime and reduced motion","page:startup")),
+        new Panel("personalization","appearance","Display","appearance","Change the appearance and sounds of your desktop","page:personalization","",t("Appearance","Windows and buttons, color scheme and font size","page:colors"),t("Desktop Background","Choose a stock or personal wallpaper","page:background"),t("Startup and Sounds","Startup intro, reboot, chime and reduced motion","page:startup")),
         new Panel("icons","appearance","Desktop Settings","computer","Desktop icons, grid, spacing, labels and snapping","page:icons","Desktop Icon Settings;desktop layout",t("Manage desktop shortcuts","Desktop Organization: folders, shortcut names and ordering","open:@organize")),
         new Panel("taskbar","appearance","Taskbar and Start Menu","control","Status bar, Android app buttons and default home","page:taskbar","taskbar properties",t("Quick Launch","Choose and order taskbar shortcuts","open:@quicklaunch"),t("Taskbar grouping","Group similar folder windows when space runs out","page:grouping")),
-        new Panel("sidebar","appearance","Gadget Settings","gadgets","Show, hide and arrange desktop gadgets","page:sidebar","Sidebar Properties;Windows Sidebar Properties",t("Desktop Gadgets","Add and arrange desktop gadgets","open:@gadgets")),
-        new Panel("date","clock","Date and Time","clock","Device date and time zone · Android","android:date","",t("Clock appearance","Clock face and second hand","page:clock")),
+        new Panel("date","clock","Date and Time","clock","Device date and time zone · Android","android:date","",t("Date and Time Properties","Device date and time settings","android:date")),
         new Panel("region","clock","Regional and Language Options","network","Device language and region · Android","android:language","language locale"),
-        new Panel("accessibility","accessibility","Accessibility Options Center","accessibility","Accessibility services and display aids · Android","android:accessibility","accessibility")));
+        new Panel("accessibility","accessibility","Accessibility Options","accessibility","Accessibility services and display aids · Android","android:accessibility","accessibility")));
     static List<Panel> category(String id){List<Panel> result=new ArrayList<>();for(Panel panel:PANELS)if(panel.category.equals(id))result.add(panel);return result;}
     static Panel panel(String id){for(Panel panel:PANELS)if(panel.id.equals(id))return panel;return null;}
     static Panel owner(String destination){for(Panel panel:PANELS){if(panel.destination.equals(destination))return panel;for(Task task:panel.tasks)if(task.destination.equals(destination))return panel;}return null;}

@@ -39,6 +39,13 @@ public class XpVisualTest {
                 activity.open("setting:page:personalization");layout(root);save(root,new File(output,"display-"+scheme+suffix+".png"));
                 View desktop=findDescription(root,"Display tab: Desktop");assertNotNull(desktop);desktop.performClick();layout(root);save(root,new File(output,"desktop-"+scheme+suffix+".png"));
                 activity.open("@notes");layout(root);assertNotNull(find(root,XpNotepad.class));save(root,new File(output,"notepad-"+scheme+suffix+".png"));
+                activity.open("@taskmanager");layout(root);save(root,new File(output,"taskmanager-applications-"+scheme+suffix+".png"));findDescription(root,"Task Manager Performance").performClick();layout(root);save(root,new File(output,"taskmanager-performance-"+scheme+suffix+".png"));
+                activity.open("@control");layout(root);((VistaControlPanel)find(root,VistaControlPanel.class)).navigate("home");layout(root);assertTrue(((VistaControlPanel)find(root,VistaControlPanel.class)).back.isShown());assertTrue(((VistaControlPanel)find(root,VistaControlPanel.class)).back.getWidth()>0);save(root,new File(output,"control-panel-"+scheme+suffix+".png"));
+                activity.open("@system");layout(root);save(root,new File(output,"system-"+scheme+suffix+".png"));
+                activity.open("setting:page:taskbar");layout(root);save(root,new File(output,"taskbar-properties-"+scheme+suffix+".png"));
+                activity.open("@recycle");layout(root);save(root,new File(output,"recycle-"+scheme+suffix+".png"));
+                activity.open("@organize");layout(root);save(root,new File(output,"app-folders-"+scheme+suffix+".png"));
+                activity.open("@clock");layout(root);save(root,new File(output,"date-time-"+scheme+suffix+".png"));
             }
         }
     }

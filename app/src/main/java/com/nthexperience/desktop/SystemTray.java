@@ -85,7 +85,7 @@ final class SystemTray extends LinearLayout {
     void clockNow(){if(compactStatus!=null){compactStatus.setTextSize(16);compactStatus.setText(expanded?"›":"‹");compactStatus.setTooltipText(expanded?"Hide notification icons":"Show hidden notification icons");}}
     private void updateIconVisibility() {
         taskManager.setVisibility(expanded ? VISIBLE : GONE);
-        actionCenter.setVisibility(expanded ? VISIBLE : GONE);
+        actionCenter.setVisibility(GONE);
         for(int i=0;i<icons.size();i++){boolean show=prefs.getBoolean(new String[]{"tray_battery","tray_network","tray_volume","tray_brightness"}[i],true)&&(expanded||i==1||i==2);icons.get(i).setVisibility(show?VISIBLE:GONE);}
         clockNow();
     }
@@ -98,6 +98,7 @@ final class SystemTray extends LinearLayout {
     void bounds(int left,int right){leftInset=left;rightInset=right;if(cover==null)return;FrameLayout.LayoutParams p=(FrameLayout.LayoutParams)frame.getLayoutParams();p.width=Math.min(dp(324),Math.max(1,workspace.getWidth()-left-right-dp(12)));p.height=Math.min(dp(page.equals("calendar")?395:page.equals("actioncenter")?310:285),Math.max(1,workspace.getHeight()-topInset-dp(10)));p.rightMargin=right+dp(6);frame.setLayoutParams(p);}
     boolean dismiss(){if(cover==null)return false;workspace.removeView(cover);cover=null;summary=null;volume=null;page="";tracking=false;main.removeCallbacks(tick);return true;}
     void show(String value){
+        if(value.equals("calendar")){dismiss();host.open("@clock");return;}
         if(value.equals(page)&&cover!=null){dismiss();return;}dismiss();host.opening();page=value;
         cover=new FrameLayout(getContext());cover.setElevation(dp(XpMetrics.ROW));cover.setFocusableInTouchMode(true);cover.setContentDescription("System tray flyout");cover.setOnClickListener(v->dismiss());workspace.addView(cover,new FrameLayout.LayoutParams(-1,-1));
         frame=Aero.column(getContext());frame.setBackground(new AeroGlass(wallpaper,AeroGlass.START));Aero.pad(frame,6);frame.setClickable(true);FrameLayout.LayoutParams position=new FrameLayout.LayoutParams(dp(324),dp(285),Gravity.BOTTOM|Gravity.END);position.bottomMargin=dp(5);cover.addView(frame,position);

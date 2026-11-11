@@ -1,9 +1,29 @@
 # Nth Desktop XP
 
-An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.3.0**.
+An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.4.0**.
 
 Android 8.0 or newer. Target SDK 36. Application ID: `com.nthexperience.desktop.xp`.
 It installs alongside Vista, Seven, Eight, Ten and Eleven.
+
+## XP guide polish — 0.4.0
+
+Control Panel now follows the supplied training images: a blue category page,
+white category labels, ten XP categories and inset, separated task groups.
+Explorer, shortcut folders and Recycle Bin use beige menu/toolbar/address rows
+and common-task groups with padding and 16dp gaps. System, Taskbar and Date/Time
+use XP property sheets. Task Manager has white Applications/Processes/Users
+lists, a compact menu/tab strip, green usage meters, black grid histories and a
+segmented status bar. All counters remain real and Android-scoped.
+
+Later shell entry points are removed: Jump Lists, live thumbnails, Peek, Flip 3D,
+edge snapping/shaking, Libraries, Gadgets and the Action Center flag. Taskbar holds
+open window commands; grouped tasks open a caption list; Alt+Tab opens an icon
+switcher. Original XP wallpaper choices and Center/Tile/Stretch replace the later
+wallpaper-gallery surface. Existing file permissions, .nthdesktop backups and
+independent taskbar rows remain supported. Android-specific options are named as
+Nth/Android settings.
+
+[Scope, references and validation](docs/XP_0_4_GUIDE_POLISH.md).
 
 ## XP visual pass — 0.3.0
 

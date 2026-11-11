@@ -16,32 +16,25 @@ final class DesktopOrganizer extends VistaShell {
     private ListView currentList;
     private EditText nameInput;
     private final TextView addPrograms;private final LinearLayout crumbs;private String viewMode;
-    private String draft,returnPage="desktop";
+    private String draft,returnPage="desktop";private LinearLayout taskGroup;
     DesktopOrganizer(Context context,DesktopStore store,Actions actions,Host host,Supplier<List<AppCatalog.Entry>> apps,String initial){
         super(context,store,actions,"Search shortcuts");this.host=host;this.apps=apps;
         viewMode=store.prefs.getString("shortcut_folder_view","Medium icons");
-        TextView organize=command("Organize ▾",this::organize),views=command("Views ▾",this::views);
-        commands.addView(organize,new LayoutParams(-2,dp(36)));commands.addView(views,new LayoutParams(-2,dp(36)));
-        addPrograms=command("Add programs",()->navigate("add:"+target()));commands.addView(addPrograms,new LayoutParams(-2,dp(36)));explorerChrome(this::classicMenu);enableNavigationToggle();
-        addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{
-            boolean narrow=r-l<dp(240);
-            String foldersLabel=narrow?"☰":"Folders",organizeLabel=narrow?"⋯":"Organize ▾";
-            String viewsLabel=narrow?"▦":"Views ▾",addLabel=narrow?"+":"Add programs";
-            if(!foldersLabel.contentEquals(folders.getText()))folders.setText(foldersLabel);
-            if(!organizeLabel.contentEquals(organize.getText()))organize.setText(organizeLabel);
-            if(!viewsLabel.contentEquals(views.getText()))views.setText(viewsLabel);
-            if(!addLabel.contentEquals(addPrograms.getText()))addPrograms.setText(addLabel);
-            organize.setContentDescription("Organize");views.setContentDescription("Views");
-            addPrograms.setContentDescription("Add programs");
-        });
-        LinearLayout location=(LinearLayout)address.getParent();int index=location.indexOfChild(address);location.removeView(address);crumbs=new LinearLayout(context);crumbs.setGravity(Gravity.CENTER_VERTICAL);crumbs.setBackground(Aero.panel(context,0xffffffff,0xfff1f7fb,1,0xff8ea6b8));crumbs.setContentDescription("Address bar");location.addView(crumbs,index,new LayoutParams(0,dp(32),1));TextView refresh=command("↻",this::refreshApps);refresh.setTextSize(19);refresh.setContentDescription("Refresh folder");location.addView(refresh,new LayoutParams(dp(28),dp(32)));start(initial);
+        TextView views=command("Views ▾",this::views);addPrograms=command("Add programs",()->navigate("add:"+target()));commands.addView(views,new LayoutParams(-2,dp(36)));commands.addView(addPrograms,new LayoutParams(-2,dp(36)));
+        View menu=explorerChrome(this::classicMenu);enableNavigationToggle();revealNavigationPane();
+        LinearLayout location=(LinearLayout)address.getParent(),toolbar=(LinearLayout)commands.getParent();int index=location.indexOfChild(address);location.removeView(address);crumbs=new LinearLayout(context);crumbs.setGravity(Gravity.CENTER_VERTICAL);crumbs.setBackground(Aero.panel(context,0xffffffff,0xffffffff,0,0xff7f9db9));crumbs.setContentDescription("Address bar");location.addView(crumbs,index,new LayoutParams(0,dp(28),1));
+        toolbar.removeView(search);search.setVisibility(GONE);toolbar.removeView(folders);commands.addView(folders,0,new LayoutParams(dp(65),dp(36)));
+        for(TextView nav:new TextView[]{up,forward,back}){((ViewGroup)nav.getParent()).removeView(nav);String kind=nav==back?"back":nav==forward?"forward":"up";nav.setText(nav==back?"Back":"");nav.setTextSize(11);nav.setSingleLine(true);XpNavigation icon=new XpNavigation(context,kind);icon.setBounds(0,0,dp(24),dp(24));nav.setCompoundDrawables(icon,null,null,null);nav.setBackground(Aero.selection(context));commands.addView(nav,0,new LayoutParams(dp(nav==back?68:35),dp(36)));}
+        TextView find=command("Search",()->{search.setVisibility(search.getVisibility()==VISIBLE?GONE:VISIBLE);if(search.getVisibility()==VISIBLE)search.requestFocus();else search.setText("");});commands.addView(find,3,new LayoutParams(dp(58),dp(36)));
+        toolbar.removeView(commands);HorizontalScrollView tools=new HorizontalScrollView(context);tools.setHorizontalScrollBarEnabled(false);tools.addView(commands);toolbar.addView(tools,new LayoutParams(-1,dp(38)));toolbar.setBackgroundColor(XpTheme.surface(context));location.setBackgroundColor(XpTheme.surface(context));removeView(menu);removeView(toolbar);removeView(location);addView(menu,0);addView(toolbar,1);addView(location,2);addView(search,3,new LayoutParams(-1,dp(32)));menu.setBackgroundColor(XpTheme.surface(context));
+        side.setBackground(Aero.panel(context,0xff7ba2e7,0xff6375d6,0,0));start(initial);
     }
     private String target(){String page=page();if(page.startsWith("add:"))return page.substring(4);return page.startsWith("contents:")||page.equals("quick")?page:"desktop";}
     private String folderId(String page){return page.startsWith("contents:")?page.substring(9):null;}
     private List<String> members(String target){String id=folderId(target);return id!=null?store.folderItems(id):target.equals("quick")?store.quickLaunch():store.desktop();}
     private void members(String target,List<String> values){String id=folderId(target);if(id!=null)store.folderItems(id,values);else if(target.equals("quick"))store.quickLaunch(values);else store.desktop(values);}
     @Override void render(){
-        currentList=null;nameInput=null;side.removeAllViews();sideHeading("Favorite Links");folderLink("Desktop shortcuts","computer",()->navigate("desktop"));folderLink("Quick Launch","programs",()->navigate("quick"));folderLink("Desktop Settings","control",()->actions.open("setting:page:icons"));folderLink("Backup and Restore","drive",()->host.open("@backup"));sideHeading("Folders");folderLink("New folder","folderapps",()->{draft=null;navigate("new");});
+        currentList=null;nameInput=null;side.removeAllViews();sideHeading("Other Places");folderLink("Desktop shortcuts","computer",()->navigate("desktop"));folderLink("Quick Launch","programs",()->navigate("quick"));folderLink("Desktop Settings","control",()->actions.open("setting:page:icons"));folderLink("Backup and Restore","drive",()->host.open("@backup"));sideHeading("Folders");folderLink("New folder","folderapps",()->{draft=null;navigate("new");});
         JSONObject folders=store.folders();Iterator<String> keys=folders.keys();while(keys.hasNext()){String id=keys.next();LinearLayout link=folderLink(host.label(id),"folderapps",()->openItem(id));
             ContextMenus.bind(link,(x,y)->optionsAt(link,id,"desktop",x,y));
             ContextMenus.bind(link.getChildAt(1),(x,y)->optionsAt(link,id,"desktop",x,y));}
@@ -59,8 +52,8 @@ final class DesktopOrganizer extends VistaShell {
         list.setOnItemLongClickListener((parent,view,position,id)->{int at=position-list.getHeaderViewsCount();if(at<0||at>=shown.size())return false;options(view,shown.get(at),page);return true;});
         ContextMenus.blank(list,(x,y)->backgroundMenu(list,page,x,y));status.setText(all.size()+" shortcut"+(all.size()==1?"":"s")+(page.equals("quick")?"  •  maximum 12":""));body(list);
     }
-    private void sideHeading(String title){TextView text=Aero.text(getContext(),title,11,0xff6d7478);text.setPadding(0,dp(8),0,dp(5));side.addView(text);}
-    private LinearLayout folderLink(String title,String kind,Runnable action){LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setBackground(Aero.selection(getContext()));row.addView(new AeroIcon(getContext(),kind),new LayoutParams(dp(18),dp(18)));TextView text=command(title,action);text.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);text.setSingleLine();text.setEllipsize(TextUtils.TruncateAt.END);text.setTextSize(11);row.addView(text,new LayoutParams(0,dp(30),1));row.setContentDescription("Navigation: "+title);row.setOnClickListener(v->action.run());side.addView(row);return row;}
+    private void sideHeading(String title){taskGroup=XpTaskPane.add(side,title,false).items;}
+    private LinearLayout folderLink(String title,String kind,Runnable action){LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setBackground(XpControls.menuSelection(getContext()));row.setPadding(dp(2),dp(5),0,dp(5));row.setMinimumHeight(dp(34));row.addView(new AeroIcon(getContext(),kind),new LayoutParams(dp(17),dp(17)));TextView text=command(title,action);text.setGravity(Gravity.CENTER_VERTICAL|Gravity.START);text.setMaxLines(3);text.setTextSize(11);row.addView(text,new LayoutParams(0,-2,1));row.setContentDescription("Navigation: "+title);row.setOnClickListener(v->action.run());taskGroup.addView(row);return row;}
     @Override protected void onAttachedToWindow(){super.onAttachedToWindow();post(this::updateAddress);}
     private String pageTitle(String value){String id=folderId(value);if(id!=null)return host.label(id);if(value.equals("desktop"))return "Desktop shortcuts";if(value.equals("quick"))return "Quick Launch";if(value.equals("new"))return "New folder";if(value.startsWith("add:"))return "Add programs";if(value.startsWith("rename:"))return "Rename "+host.label(value.substring(7));if(value.startsWith("dissolve:"))return "Dissolve folder";return "Folder options";}
     private String parentPage(String value){
@@ -74,7 +67,7 @@ final class DesktopOrganizer extends VistaShell {
         post(()->{View v=this;while(v.getParent() instanceof View){v=(View)v.getParent();if(v instanceof DesktopWindow){DesktopWindow window=(DesktopWindow)v;String name=pageTitle(page());if(!window.caption().equals(name)){window.caption(name);actions.action("taskbar-refresh");}break;}}});
         crumbs.removeAllViews();HorizontalScrollView scroll=new HorizontalScrollView(getContext());scroll.setHorizontalScrollBarEnabled(false);LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);scroll.addView(row);crumbs.addView(scroll,new LayoutParams(-1,-1));
         List<String> chain=new ArrayList<>();String value=page();while(value!=null&&!chain.contains(value)&&chain.size()<8){chain.add(0,value);value=parentPage(value);}
-        for(String destination:chain){if(row.getChildCount()>0)row.addView(Aero.text(getContext(),"›",15,0xff677e8c));String label=destination.equals("desktop")?"Desktop":pageTitle(destination);TextView link=command(label,()->navigate(destination));link.setSingleLine(true);link.setContentDescription("Navigate to "+(destination.equals("desktop")?"Desktop shortcuts":label));row.addView(link,new LayoutParams(-2,-1));}scroll.post(()->scroll.fullScroll(View.FOCUS_RIGHT));
+        for(String destination:chain){if(row.getChildCount()>0)row.addView(Aero.text(getContext(),"\\",13,Aero.INK));String label=destination.equals("desktop")?"Desktop":pageTitle(destination);TextView link=command(label,()->navigate(destination));link.setSingleLine(true);link.setContentDescription("Navigate to "+(destination.equals("desktop")?"Desktop shortcuts":label));row.addView(link,new LayoutParams(-2,-1));}scroll.post(()->scroll.fullScroll(View.FOCUS_RIGHT));
     }
     private void folderContents(String target,List<String> items,int total){
         LinearLayout area=Aero.column(getContext());if(viewMode.equals("Details")){LinearLayout header=new LinearLayout(getContext());header.setBackground(Aero.panel(getContext(),0xffffffff,0xffe9eef4,0,0xffbacbd8));TextView name=command("Name ▾",()->sortFolder("Name"));header.addView(name,new LayoutParams(0,dp(28),1));header.addView(command("Type",()->sortFolder("Type")),new LayoutParams(dp(80),dp(28)));header.addView(new View(getContext()),new LayoutParams(dp(40),dp(28)));area.addView(header);}
@@ -95,7 +88,7 @@ final class DesktopOrganizer extends VistaShell {
     private void backgroundMenu(View anchor,String target,float x,float y){DesktopContextMenu menu=new DesktopContextMenu(getContext(),"App folder context menu");menu.item("Paste","paste",!ExplorerClipboard.shortcuts.isEmpty(),()->paste(target));menu.submenu("Views","appearance",this::views);menu.item("Sort by name","programs",()->sortFolder("Name"));menu.item("New desktop folder…","folderapps",()->{draft=null;navigate("new");});menu.item("Add programs","programs",()->navigate("add:"+target));menu.item("Refresh","refresh",this::refreshApps);ContextMenus.show(menu,anchor,x,y);}
     private void picker(String target){
         String folder=folderId(target);if(folder!=null&&!store.isFolder(folder)){navigate("desktop");return;}address.setText("Add programs  ›  "+(folder!=null?host.label(folder):target.equals("quick")?"Quick Launch":"Desktop"));
-        List<String> available=new ArrayList<>(Arrays.asList("@computer","@browser","@photos",MediaLibrary.PLAYER,MediaLibrary.CENTER,"@files","@notes","@appearance","@control","@gadgets","@calendar","@sticky","@filemanagers","@backup","@taskmanager","@recycle","@workspaces","@recent"));
+        List<String> available=new ArrayList<>(Arrays.asList("@computer","@browser","@photos",MediaLibrary.PLAYER,MediaLibrary.CENTER,"@files","@notes","@appearance","@control","@calendar","@sticky","@filemanagers","@backup","@taskmanager","@recycle","@workspaces","@recent"));
         Iterator<String> locations=FolderLinks.list(store).keys();while(locations.hasNext())available.add(locations.next());for(AppCatalog.Entry app:apps.get())if(!available.contains(app.id))available.add(app.id);
         if(folder==null){Iterator<String> keys=store.folders().keys();while(keys.hasNext())available.add(keys.next());}
         available.sort((a,b)->java.text.Collator.getInstance().compare(host.label(a),host.label(b)));available.removeIf(id->!host.label(id).toLowerCase(Locale.getDefault()).contains(query()));

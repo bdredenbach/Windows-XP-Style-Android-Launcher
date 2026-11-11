@@ -24,6 +24,7 @@ final class XpTheme {
     static int taskbarInk(Context c){return scheme(c)==5?0xff000000:titleInk(c);}
     static void defaults(DesktopStore store){
         TaskbarRows.migrate(store.prefs);
+        store.prefs.edit().putBoolean("sidebar_visible",false).putBoolean("taskbar_previews",false).apply();
         if(!store.prefs.contains("desktop_icon_percent")&&!store.prefs.contains("desktop_icon_size"))store.prefs.edit().putInt("desktop_icon_percent",78).apply();
         SharedPreferences.Editor edit=store.prefs.edit();
         if(!store.prefs.contains("xp_initialized")){
@@ -35,6 +36,7 @@ final class XpTheme {
             if(!store.prefs.contains("explorer_menu_bar"))edit.putBoolean("explorer_menu_bar",true);
             if(!store.prefs.contains("sidebar_visible"))edit.putBoolean("sidebar_visible",false);
             if(!store.prefs.contains("gadgets"))edit.putString("gadgets","[]");
+            if(!store.prefs.contains("wallpaper_position"))edit.putString("wallpaper_position","Stretch");
             if(!store.prefs.contains("start_pins"))edit.putString("start_pins","[\"@browser\",\"@files\",\"@notes\",\"@mediaplayer\"]");
             edit.apply();
         }

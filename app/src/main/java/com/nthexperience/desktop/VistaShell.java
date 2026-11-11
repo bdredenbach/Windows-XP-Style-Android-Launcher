@@ -37,7 +37,7 @@ abstract class VistaShell extends LinearLayout {
         addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{status.setVisibility(b-t<dp(250)?GONE:VISIBLE);boolean next=r-l<dp(490),narrow=r-l<dp(240);if(!ready||next!=compact||narrow!=veryNarrow){compact=next;veryNarrow=narrow;updateNavigationPane();folders.setVisibility(!hideFoldersButton&&(keepFoldersButton||compact)?VISIBLE:GONE);if(ready)render();}});
         search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int n,int f){}public void afterTextChanged(Editable e){}public void onTextChanged(CharSequence s,int start,int before,int count){if(ready&&!restoring)render();}});
     }
-    private void updateNavigationPane(){sideScroll.setVisibility(!veryNarrow&&(navigationOverride==null?!compact:navigationOverride)?VISIBLE:GONE);}
+    private void updateNavigationPane(){ViewGroup.LayoutParams size=sideScroll.getLayoutParams();int width=dp(compact?136:184);if(size.width!=width){size.width=width;sideScroll.setLayoutParams(size);}sideScroll.setVisibility(!veryNarrow&&(navigationOverride==null?!compact:navigationOverride)?VISIBLE:GONE);}
     final void enableNavigationToggle(){navigationPreference="explorer_navigation";navigationOverride=store.prefs.getBoolean(navigationPreference,true);updateNavigationPane();keepFoldersButton=true;folders.setVisibility(VISIBLE);folders.setOnClickListener(v->toggleNavigationPane());}
     final void revealNavigationPane(){navigationOverride=true;updateNavigationPane();}
     final boolean navigationPaneVisible(){return sideScroll.getVisibility()==VISIBLE;}
@@ -53,7 +53,7 @@ abstract class VistaShell extends LinearLayout {
         commands.setLayoutParams(new LayoutParams(0,dp(36),1));
     }
     final View explorerChrome(java.util.function.Consumer<String> menu){
-        LinearLayout classic=new LinearLayout(getContext());classic.setBackground(Aero.panel(getContext(),0xfffcfcfc,0xffe4e8ed,0,0xffafb9c2));
+        LinearLayout classic=new LinearLayout(getContext());classic.setBackgroundColor(XpTheme.surface(getContext()));
         for(String label:new String[]{"File","Edit","View","Favorites","Tools","Help"}){TextView item=command(label,()->menu.accept(label));item.setContentDescription(label+" menu");classic.addView(item,new LayoutParams(-2,dp(26)));}addView(classic,1,new LayoutParams(-1,dp(27)));
         ((ViewGroup)commands.getParent()).setBackground(Aero.gloss(getContext(),new int[]{0xfff6faff,0xffe7eff8,0xffd6e3f1,0xffedf4fb},0,0xffb5c8da));folders.setTextColor(0xff263f54);
         for(int i=0;i<commands.getChildCount();i++)if(commands.getChildAt(i) instanceof TextView)((TextView)commands.getChildAt(i)).setTextColor(0xff263f54);
@@ -96,7 +96,7 @@ abstract class VistaShell extends LinearLayout {
     final void loading(View view){content.removeAllViews();content.addView(view,new FrameLayout.LayoutParams(-1,-1));}
     final ScrollView scrolling(LinearLayout column){ScrollView scroll=new ScrollView(getContext());scroll.setFillViewport(true);scroll.addView(column,new ScrollView.LayoutParams(-1,-2));return scroll;}
     final LinearLayout column(){LinearLayout value=Aero.column(getContext());value.setPadding(dp(14),dp(10),dp(14),dp(16));return value;}
-    final void heading(LinearLayout parent,String title,String description){TextView h=Aero.text(getContext(),title,this instanceof VistaExplorer?15:18,this instanceof VistaExplorer?0xff003399:0xff326421);h.setPadding(0,dp(3),0,dp(5));parent.addView(h);if(!description.isEmpty()){TextView sub=Aero.text(getContext(),description,12,0xff586976);sub.setPadding(0,0,0,dp(13));parent.addView(sub);}}
+    final void heading(LinearLayout parent,String title,String description){TextView h=Aero.text(getContext(),title,this instanceof VistaExplorer?15:18,this instanceof VistaExplorer?0xff003399:0xff003399);h.setPadding(0,dp(3),0,dp(5));parent.addView(h);if(!description.isEmpty()){TextView sub=Aero.text(getContext(),description,12,0xff586976);sub.setPadding(0,0,0,dp(13));parent.addView(sub);}}
     final TextView link(LinearLayout parent,String title,Runnable action){TextView v=Aero.text(getContext(),title,13,0xff075cac);v.setMinHeight(dp(38));v.setBackground(Aero.selection(getContext()));v.setOnClickListener(w->action.run());parent.addView(v,new LayoutParams(-1,-2));return v;}
     final void task(LinearLayout parent,String icon,String title,String description,Runnable action){
         LinearLayout row=new LinearLayout(getContext());row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(dp(5),dp(8),dp(5),dp(8));row.setBackground(Aero.selection(getContext()));AeroIcon image=new AeroIcon(getContext(),icon);row.addView(image,new LayoutParams(dp(42),dp(42)));LinearLayout text=Aero.column(getContext());text.setPadding(dp(11),0,0,0);TextView name=Aero.text(getContext(),title,14,0xff075cac);text.addView(name);if(!description.isEmpty()){TextView sub=Aero.text(getContext(),description,11,0xff596c79);sub.setPadding(0,dp(3),0,0);text.addView(sub);}row.addView(text,new LayoutParams(0,-2,1));row.setContentDescription(title);row.setFocusable(true);row.setOnClickListener(v->action.run());parent.addView(row,new LayoutParams(-1,-2));

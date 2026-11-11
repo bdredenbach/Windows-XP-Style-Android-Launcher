@@ -50,6 +50,17 @@ public final class XpSmoke extends Instrumentation {
         ui(()->home.open("@browser"));settle();check(find(root,v->"Internet Explorer File menu".equals(v.getContentDescription()))!=null,"IE classic menu present");check(find(root,v->"Go to address".equals(v.getContentDescription()))!=null,"IE address row present");shot("08-internet-explorer");
         ui(()->home.open(MediaLibrary.PLAYER));settle();check(find(root,v->"Media Player File menu".equals(v.getContentDescription()))!=null,"XP media player menu present");shot("09-media-player");
         ui(()->home.open("@control"));settle();shot("10-control-panel");
+        check(find(root,v->"Pick a category".contentEquals(v instanceof TextView?((TextView)v).getText():""))!=null,"XP blue category page heading");
+        ui(()->home.open("@taskmanager"));settle();ui(()->find(root,v->"Task Manager Applications".equals(v.getContentDescription())).performClick());settle();check(find(root,v->"XP applications list".equals(v.getContentDescription()))!=null,"Task Manager applications table");shot("11-taskmanager-applications");
+        for(String tab:new String[]{"Processes","Networking","Users"}){ui(()->find(root,v->("Task Manager "+tab).equals(v.getContentDescription())).performClick());settle();shot("taskmanager-"+tab.toLowerCase(java.util.Locale.ROOT));}
+        ui(()->home.open("@system"));settle();check(find(root,v->"Property tab: General".equals(v.getContentDescription()))!=null,"System uses XP property tabs");shot("12-system-properties");
+        ui(()->home.open("setting:page:taskbar"));settle();check(find(root,v->"XP Taskbar and Start Menu Properties".equals(v.getContentDescription()))!=null,"XP taskbar property sheet");
+        ui(()->((CheckBox)find(root,v->"Expand taskbar to two rows".equals(v.getContentDescription()))).setChecked(true));check(!store.prefs.getBoolean("taskbar_expanded",false),"Taskbar change is staged");shot("13-taskbar-properties");
+        ui(()->find(window("@control"),v->v instanceof TextView&&"Cancel".contentEquals(((TextView)v).getText())).performClick());settle();check(!store.prefs.getBoolean("taskbar_expanded",false),"Taskbar Cancel keeps previous rows");
+        ui(()->home.open("@recycle"));settle();check(find(root,v->"Task group: Recycle Bin Tasks".equals(v.getContentDescription()))!=null,"Recycle Bin XP task group");shot("14-recycle-bin");
+        ui(()->home.open("@organize"));settle();check(find(root,v->"Task group: Other Places".equals(v.getContentDescription()))!=null,"App folder XP task groups");shot("15-app-folders");
+        ui(()->home.open("@clock"));settle();check(find(root,v->"Property tab: Date & Time".equals(v.getContentDescription()))!=null,"Clock uses XP date/time properties");shot("16-date-time");
+
 
         // A real hold invokes the options route retained from Seven's Start touch fix.
         ui(()->find(root,v->v instanceof XpStartButton).performClick());settle();app=find(root,v->"Open Programs: Notepad".equals(v.getContentDescription()));

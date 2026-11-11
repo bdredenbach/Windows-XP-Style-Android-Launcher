@@ -228,8 +228,8 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             renderTaskbar();
         });
         tray=new SystemTray(this,workspace,wallpaper,new SystemTray.Host(){public void action(String id){vistaAction(id);}public void open(String id){MainActivity.this.open(id);}public void layout(){main.post(()->{layoutWorkspace();renderTaskbar();});}public void opening(){if(previews!=null)previews.dismiss();startMenu.hide();((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(root.getWindowToken(),0);}});taskbar.addView(tray,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
-        clock=Aero.text(this,"",11,XpTheme.taskbarInk(this));clock.setGravity(Gravity.CENTER);clock.setSingleLine(true);clock.setIncludeFontPadding(false);clock.setPadding(dp(5),0,dp(5),0);clock.setMinWidth(dp(62));clock.setBackground(XpControls.notification(this,false));tray.setBackground(XpControls.notification(this,true));clock.setOnClickListener(v->tray.show("calendar"));clock.setContentDescription("Clock and calendar");taskbar.addView(clock,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
-        FrameLayout peek=new FrameLayout(this);desktopToggle=peek;View peekStrip=new AeroIcon(this,"showdesktop");peek.addView(peekStrip,new FrameLayout.LayoutParams(dp(22),dp(22),Gravity.CENTER));peek.setContentDescription("Show desktop");peek.setOnClickListener(v->{previews.dismiss();showDesktop();});ContextMenus.bind(peek,(x,y)->taskbarMenu(peek,x,y));previews.bindDesktopPeek(peek);taskbar.addView(peek,2,new LinearLayout.LayoutParams(dp(28),dp(XpMetrics.ROW)));shell.addView(taskbar,new LinearLayout.LayoutParams(-1,dp(XpMetrics.TASKBAR)));taskbar.getViewTreeObserver().addOnPreDrawListener(()->{syncTaskbarBounds();return true;});applyTaskbarRows();renderTaskbar();
+        clock=Aero.text(this,"",11,XpTheme.taskbarInk(this));clock.setGravity(Gravity.CENTER);clock.setSingleLine(true);clock.setIncludeFontPadding(false);clock.setPadding(dp(5),0,dp(5),0);clock.setMinWidth(dp(62));clock.setBackground(XpControls.notification(this,false));tray.setBackground(XpControls.notification(this,true));clock.setOnClickListener(v->open("@clock"));clock.setContentDescription("Clock and calendar");taskbar.addView(clock,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
+        FrameLayout peek=new FrameLayout(this);desktopToggle=peek;View peekStrip=new AeroIcon(this,"showdesktop");peek.addView(peekStrip,new FrameLayout.LayoutParams(dp(22),dp(22),Gravity.CENTER));peek.setContentDescription("Show desktop");peek.setOnClickListener(v->{previews.dismiss();showDesktop();});ContextMenus.bind(peek,(x,y)->taskbarMenu(peek,x,y));peek.setTooltipText("Show desktop");taskbar.addView(peek,2,new LinearLayout.LayoutParams(dp(28),dp(XpMetrics.ROW)));shell.addView(taskbar,new LinearLayout.LayoutParams(-1,dp(XpMetrics.TASKBAR)));taskbar.getViewTreeObserver().addOnPreDrawListener(()->{syncTaskbarBounds();return true;});applyTaskbarRows();renderTaskbar();
     }
     private void applyTaskbarRows(){
         if(taskbarView==null)return;
@@ -285,7 +285,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     int desktopGridWidth(){return desktop==null?0:desktop.getWidth();}
     int desktopGridHeight(){return desktop==null?0:desktop.viewportHeight();}
     private void renderDesktop(){
-        if(desktop==null)return;desktop.removeAllViews();List<String> ids=store.desktop();desktop.configure(dp(store.tileWidth()),dp(store.tileHeight()),java.util.Collections.emptyList());
+        if(desktop==null)return;desktop.setVisibility(store.prefs.getBoolean("show_desktop_icons",true)?View.VISIBLE:View.INVISIBLE);desktop.removeAllViews();List<String> ids=store.desktop();desktop.configure(dp(store.tileWidth()),dp(store.tileHeight()),java.util.Collections.emptyList());
         for(int index=0;index<ids.size();index++){
             String id=ids.get(index);LinearLayout tile=Aero.column(this);tile.setGravity(Gravity.TOP|Gravity.CENTER_HORIZONTAL);tile.setPadding(dp(2+store.spacingX()/2),dp(6+store.spacingY()/2),dp(2+store.spacingX()/2),dp(3+store.spacingY()/2));int iconSize=store.iconSize();View icon=icon(id,iconSize);tile.addView(icon,new LinearLayout.LayoutParams(dp(iconSize),dp(iconSize)));
             TextView label=Aero.text(this,label(id),store.labelSize(),Color.WHITE);label.setGravity(Gravity.TOP|Gravity.CENTER_HORIZONTAL);label.setMaxLines(2);label.setEllipsize(TextUtils.TruncateAt.END);label.setShadowLayer(dp(3),0,dp(1),0xff000000);label.setVisibility(store.iconLabels()?View.VISIBLE:View.GONE);tile.addView(label,new LinearLayout.LayoutParams(-1,-2));
@@ -329,11 +329,12 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             for(String id:ExternalTasks.list())if(entries.containsKey(id))external.add(id);
         }
         boolean compactTasks=getResources().getConfiguration().screenWidthDp<480&&(!taskIds.isEmpty()||!ExternalTasks.list().isEmpty());
+        clock.setVisibility(store.prefs.getBoolean("tray_clock",true)?View.VISIBLE:View.GONE);
         boolean fit=store.prefs.getBoolean("taskbar_static",false);
         boolean showLabels=store.prefs.getBoolean("taskbar_show_labels",true);
         boolean expanded=store.prefs.getBoolean("taskbar_expanded",false);
         int buttonWidth=dp(showLabels?124:50), gap=dp(showLabels?3:2);
-        List<String> pins=showLabels&&!expanded?Collections.emptyList():store.quickLaunch();
+        List<String> pins=showLabels&&!expanded?Collections.emptyList():store.prefs.getBoolean("taskbar_quick_launch",true)?store.quickLaunch():Collections.emptyList();
         Map<String,LinearLayout> buttons=new LinkedHashMap<>();
         int viewport=taskViewportWidth>0?taskViewportWidth:dp(240);
         int taskRoom=expanded?viewport:showLabels?viewport-addQuickLaunch(compactTasks,fit,viewport,!taskIds.isEmpty()||!external.isEmpty()):viewport;
@@ -345,19 +346,18 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         for(String pin:pins)if(folderTask(pin,windows.get(pin)))folderPins.add(pin);
         String folderSlot=folderPins.contains("@files")?"@files":folderPins.isEmpty()?null:folderPins.get(0);
         boolean familyInPinnedSlot=false;
-        boolean mousePreviews=store.prefs.getBoolean("taskbar_previews",true);
+        boolean mousePreviews=false;
         for(List<String> group:TaskbarGrouping.groups(taskIds,explorerIds,grouping,taskRoom-occupied*(buttonWidth+gap),buttonWidth+gap)){
             DesktopWindow first=windows.get(group.get(0));boolean grouped=group.size()>1,isActive=false;List<DesktopWindow> members=new ArrayList<>();for(String id:group){DesktopWindow window=windows.get(id);members.add(window);isActive|=window.active();if(window.active())first=window;}DesktopWindow target=first;
             String title=grouped?"Folders ("+group.size()+")":target.caption();LinearLayout button=taskButton(grouped&&!showLabels?"@files":target.toolId,title,showLabels);AeroGlass surface=new AeroGlass(wallpaper,AeroGlass.TASKBUTTON);surface.active(isActive);surface.stacked(grouped&&!showLabels);button.setBackground(surface);button.setSelected(isActive);button.setContentDescription(grouped?"Folder windows, "+group.size()+" windows":(isActive?"Minimize ":"Restore ")+title);
-            if(members.stream().anyMatch(window->window.body instanceof VistaExplorer||window.body instanceof BrowserPanel))
-                taskProgressSurfaces.put(surface,members);
+
             if(target.toolId.equals("@recycle"))button.setOnDragListener(this::recycleDrop);
             boolean pinnedExplorerFamily=folderSlot!=null&&explorerIds.contains(target.toolId)&&explorerIds.size()==group.size();
             ContextMenus.Open commands=(x,y)->{
                 previews.dismiss();startMenu.hide();tray.dismiss();
                 if(!grouped&&!(pinnedExplorerFamily&&folderPins.size()>1)){target.showSystemMenu(button,x,y);return;}
                 DesktopContextMenu menu=new DesktopContextMenu(this,"Folder group commands");
-                menu.item("Open new Explorer window","files",()->newExplorer("libraries"));
+                menu.item("Open new Explorer window","files",()->newExplorer("computer"));
                 for(String pin:folderPins)if(!group.contains(pin))menu.item("Open "+label(pin),"files",()->open(pin));
                 menu.separator();
                 for(DesktopWindow window:members)menu.item(window.caption(),"files",window::restore);
@@ -366,7 +366,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                 menu.item("Close group","close",()->{for(DesktopWindow window:members)window.closeWindow();});
                 ContextMenus.show(menu,button,x,y);
             };
-            if(hasJumpList(target.toolId))ContextMenus.bindJumpList(button,(x,y)->showJumpList(button,target.toolId,x,y));
+            if(hasJumpList(target.toolId))ContextMenus.bind(button,commands);
             else ContextMenus.bind(button,commands);
             if(!grouped)button.setOnClickListener(v->{previews.dismiss();startMenu.hide();tray.dismiss();if(target.getVisibility()==View.VISIBLE&&!target.minimizing()&&target.active())target.minimize();else target.restore();});
             previews.bindTask(button,members,mousePreviews,()->ContextMenus.centered(button,commands));
@@ -390,7 +390,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                 menu.item("Taskbar Properties","control",()->open("setting:page:taskbar"));
                 ContextMenus.show(menu,button,x,y);
             };
-            ContextMenus.bindJumpList(button,(x,y)->showJumpList(button,id,x,y));
+            ContextMenus.bind(button,commands);
             previews.bindApp(button,title,true,mousePreviews,()->open(id),()->ContextMenus.centered(button,commands));
             LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(buttonWidth,dp(XpMetrics.ROW));
             lp.rightMargin=gap;button.setLayoutParams(lp);TaskbarItems.slot(button,true);taskbarButton(button,id,id);buttons.put(id,button);
@@ -406,7 +406,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                 button.setOnClickListener(v->open(id));
                 LinearLayout pinned=button;
                 ContextMenus.Open commands=(x,y)->{previews.dismiss();shortcutMenu(pinned,id,"quick",x,y);};
-                if(hasJumpList(id))ContextMenus.bindJumpList(pinned,(x,y)->showJumpList(pinned,id,x,y));
+                if(hasJumpList(id))ContextMenus.bind(pinned,commands);
                 else ContextMenus.bind(pinned,commands);
                 previews.bindApp(pinned,label(id),false,false,()->open(id),()->ContextMenus.centered(pinned,commands));
                 LinearLayout.LayoutParams size=new LinearLayout.LayoutParams(buttonWidth,dp(XpMetrics.ROW));
@@ -435,7 +435,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             if(taskStrip.getScrollX()!=0)taskStrip.scrollTo(0,0);
         }
         if(sidebar!=null&&store.prefs.getBoolean("sidebar_always_top",false))sidebar.raise();
-        desktopHidden.entrySet().removeIf(item->item.getValue().getParent()==null||windows.get(item.getKey())!=item.getValue());if(desktopToggle!=null){String hint=desktopHidden.isEmpty()?"Show desktop":"Restore desktop windows";desktopToggle.setContentDescription(hint);desktopToggle.setTooltipText(hint+". Hold to peek.");}
+        desktopHidden.entrySet().removeIf(item->item.getValue().getParent()==null||windows.get(item.getKey())!=item.getValue());if(desktopToggle!=null){String hint=desktopHidden.isEmpty()?"Show desktop":"Restore desktop windows";desktopToggle.setContentDescription(hint);desktopToggle.setTooltipText(hint);}
         main.removeCallbacks(taskProgressTick);
         if(!taskProgressSurfaces.isEmpty())main.post(taskProgressTick);
         DesktopWindow manager=windows.get("@taskmanager");if(manager!=null&&manager.getParent()!=null&&manager.body instanceof TaskManagerPanel)((TaskManagerPanel)manager.body).tasksChanged();
@@ -496,7 +496,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                 menu.item(item.optString("name","Folder"),"files",()->newExplorer(item.optString("page")));
             }
             menu.section("Tasks");
-            menu.item("Open new Explorer window","files",()->newExplorer("libraries"));
+            menu.item("Open new Explorer window","files",()->newExplorer("computer"));
             if(pinned.length()>0)menu.item("Manage pinned folders…","files",()->{
                 List<JSONObject> records=new ArrayList<>();
                 List<String> names=new ArrayList<>();
@@ -618,7 +618,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                 ||FolderLinks.id(id)||store.isFolder(id)||Arrays.asList("@files","@computer","@documents","@pictures","@music","@filemanagers").contains(id);
     }
     private int addQuickLaunch(boolean compact,boolean fit,int viewport,boolean hasTasks){
-        if(compact)return 0;
+        if(compact||!store.prefs.getBoolean("taskbar_quick_launch",true))return 0;
         List<String> shortcuts=store.quickLaunch();
         int cell=dp(40),separator=dp(12);
         int slots=shortcuts.size();
@@ -636,7 +636,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             quick.setContentDescription("Open "+label(id));
             quick.setOnClickListener(v->open(id));
             ContextMenus.Open commands=(x,y)->{previews.dismiss();shortcutMenu(quick,id,"quick",x,y);};
-            if(hasJumpList(id))ContextMenus.bindJumpList(quick,(x,y)->showJumpList(quick,id,x,y));
+            if(hasJumpList(id))ContextMenus.bind(quick,commands);
             else ContextMenus.bind(quick,commands);
             previews.bindApp(quick,label(id),false,false,()->open(id),()->ContextMenus.centered(quick,commands));
             taskItems.addView(quick,new LinearLayout.LayoutParams(cell,dp(XpMetrics.ROW)));
@@ -714,7 +714,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     private String defaultLabel(String id){
         JSONObject location=FolderLinks.get(store,id);if(location!=null)return location.optString("title","Folder");
         if(id.startsWith("@gadget:")&&GadgetCatalog.extra(id.substring(8)))return GadgetCatalog.title(id.substring(8));
-        switch(id){case MediaLibrary.PLAYER:return MediaLibrary.PLAYER_TITLE;case MediaLibrary.CENTER:return MediaLibrary.CENTER_TITLE;case "@recycle":return "Recycle Bin";case "@workspaces":return "Saved Workspaces";case "@recent":return "Recent Items";case "@taskmanager":return "Task Manager";case "@actioncenter":return "Action Center";case "@welcome":return "Welcome Center";case "@organize":return "Desktop Organization";case "@quicklaunch":return "Quick Launch";case "@backup":return "Backup and Restore";case "@control":return "Control Panel";case "@system":return "System";case "@filemanagers":return "File Managers";case "@weather":return "Weather";case "@clock":return "Clock";case "@gadgets":return "Gadget Gallery";case "@sticky":return "Notes";case "@calendar":return "Calendar";case "@computer":return "My Computer";case "@browser":return BrowserPanel.NAME;case "@photos":return "Picture and Fax Viewer";case "@files":return "Files";case "@documents":return "My Documents";case "@pictures":return "My Pictures";case "@music":return "My Music";case "@flip3d":return "Flip 3D";case "@notes":return "Notepad";case "@appearance":return "Display Properties";default:AppCatalog.Entry app=entries.get(id);return app==null?"Unavailable app":app.label;}
+        switch(id){case MediaLibrary.PLAYER:return MediaLibrary.PLAYER_TITLE;case MediaLibrary.CENTER:return MediaLibrary.CENTER_TITLE;case "@recycle":return "Recycle Bin";case "@workspaces":return "Saved Workspaces";case "@recent":return "Recent Items";case "@taskmanager":return "Task Manager";case "@actioncenter":return "Security Center";case "@welcome":return "Help and Support Center";case "@organize":return "Desktop Organization";case "@quicklaunch":return "Quick Launch";case "@backup":return "Backup and Restore";case "@control":return "Control Panel";case "@system":return "System";case "@filemanagers":return "File Managers";case "@weather":return "Weather";case "@clock":return "Clock";case "@gadgets":return "Gadget Gallery";case "@sticky":return "Notes";case "@calendar":return "Calendar";case "@computer":return "My Computer";case "@browser":return BrowserPanel.NAME;case "@photos":return "Picture and Fax Viewer";case "@files":return "Files";case "@documents":return "My Documents";case "@pictures":return "My Pictures";case "@music":return "My Music";case "@flip3d":return "Switch Programs";case "@notes":return "Notepad";case "@appearance":return "Display Properties";default:AppCatalog.Entry app=entries.get(id);return app==null?"Unavailable app":app.label;}
     }
     @Override public void open(String id){
         if(steps.active()&&recordableDesktop()){
@@ -737,22 +737,22 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         if(id.startsWith("search-file:")){JSONObject file=LinkedFiles.get(store,id.substring(12));if(file==null){toast("This file link is unavailable. Choose it again in Computer.");return;}viewDocument(Uri.parse(file.optString("uri")),file.optString("mime"));return;}
         if(store.isFolder(id)){organizer(id,"contents:"+id);return;}
         switch(id){
-            case "@flip3d":previews.flip();return;
+            case "@flip3d":previews.show();return;
             case "@switcher":previews.show();return;
             case "@brightness":tray.show("brightness");return;
             case "@recycle":if(!restoreTool(id))window(id,"Recycle Bin",new RecyclePanel(this,store,vistaActions,this::filesChanged));windows.get(id).captionIcon(recycleFull?"recycle-full":"recycle");return;
             case "@recent":if(!restoreTool(id))window(id,"Recent Items",new RecentItemsPanel(this,store,this::open));else if(windows.get(id).body instanceof RecentItemsPanel)((RecentItemsPanel)windows.get(id).body).refresh();return;
             case "@workspaces":showWorkspaces();return;
             case "@taskmanager":taskManager();return;
-            case "@actioncenter":actionCenter();return;
-            case "@welcome":if(!restoreTool(id))window(id,"Welcome Center",new WelcomeCenter(this,store,vistaActions));return;
+            case "@actioncenter":vistaAction("android:security");return;
+            case "@welcome":if(!restoreTool(id))window(id,"Help and Support Center",new WelcomeCenter(this,store,vistaActions));return;
             case "@organize":organizer("@organize","desktop");return;
             case "@quicklaunch":organizer("@quicklaunch","quick");return;
             case "@backup":backupPanel(false);return;
             case "@control":controlPanel("@control","Control Panel","home");return;
             case "@system":controlPanel("@system","System","system");return;
             case "@filemanagers":explorer("@filemanagers","managers");return;
-            case "@gadgets":gadgetGallery();return;
+            case "@gadgets":open("@welcome");return;
             case "@clock":clockOptions();return;
             case "@weather":weatherSettings();return;
             case "@sticky":stickyNote();return;
@@ -824,10 +824,10 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         desktopMenu.item("New folder","folderapps",()->organizer("@organize","new"));
         desktopMenu.submenu("Desktop tools","computer",()->desktopTools(x,y));
         desktopMenu.separator();
-        desktopMenu.item("Screen resolution","computer",()->vistaAction("android:display"));
-        desktopMenu.item("Gadgets","gadgets",this::gadgetGallery);
+
+
         desktopMenu.submenu("Desktop background","pictures",()->backgroundMenu(x,y));
-        if(wallpaper.hasSlideshow())desktopMenu.item("Next desktop background","pictures",wallpaper::next);
+
         desktopMenu.item("Properties","appearance",this::appearance);
         if(!isHome()){desktopMenu.separator();desktopMenu.item("Make default home","orb",this::home);}
         showDesktopMenu(x,y);
@@ -839,14 +839,14 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         desktopMenu.item("Control Panel","control",()->open("@control"));
         desktopMenu.item("Recycle Bin","delete",()->open("@recycle"));
         desktopMenu.item("Saved Workspaces…","computer",this::showWorkspaces);
-        desktopMenu.item("Flip 3D","appearance",()->open("@flip3d"));
+
         desktopMenu.item("Manage desktop shortcuts","computer",this::manageShortcuts);
         showDesktopMenu(x,y);
     }
     private void backgroundMenu(float x,float y){
         desktopMenu=new DesktopContextMenu(this,"Desktop backgrounds");
         List<String> current=DesktopBackgrounds.current(store.prefs);
-        for(int i=0;i<DesktopBackgrounds.NAMES.length;i++){
+        for(int i=XpWallpapers.FIRST;i<DesktopBackgrounds.NAMES.length;i++){
             int theme=i;String key=DesktopBackgrounds.stock(theme);
             desktopMenu.checked(DesktopBackgrounds.NAMES[i],current.size()==1&&current.contains(key),()->{
                 android.content.SharedPreferences.Editor edit=store.prefs.edit();
@@ -855,7 +855,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             });
         }
         desktopMenu.separator();
-        desktopMenu.item("Choose pictures or a slide show…","pictures",()->open("setting:page:background"));
+        desktopMenu.item("Desktop Properties…","pictures",()->open("setting:page:background"));
         showDesktopMenu(x,y);
     }
     private void showDesktopMenu(float x,float y){
@@ -869,7 +869,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         refreshRecycleIcon();renderTaskbar();
     }
     private void quickOptions(View anchor,String id){ContextMenus.centered(anchor,(x,y)->shortcutMenu(anchor,id,"quick",x,y));}
-    private void desktopViewMenu(float x,float y){desktopMenu=new DesktopContextMenu(this);String[] names={"Small icons","Medium icons","Large icons"};for(int i=0;i<names.length;i++){final int value=i;desktopMenu.item((store.prefs.getInt("desktop_icon_size",1)==i?"✓  ":"")+names[i],"computer",()->{store.prefs.edit().putInt("desktop_icon_size",value).remove("desktop_icon_percent").apply();desktopChanged();});}desktopMenu.separator();desktopMenu.checked("Show desktop gadgets",sidebar.getVisibility()==View.VISIBLE,()->sidebar.visible(sidebar.getVisibility()!=View.VISIBLE));showDesktopMenu(x,y);}
+    private void desktopViewMenu(float x,float y){desktopMenu=new DesktopContextMenu(this);String[] names={"Small icons","Medium icons","Large icons"};for(int i=0;i<names.length;i++){final int value=i;desktopMenu.item((store.prefs.getInt("desktop_icon_size",1)==i?"✓  ":"")+names[i],"computer",()->{store.prefs.edit().putInt("desktop_icon_size",value).remove("desktop_icon_percent").apply();desktopChanged();});}desktopMenu.separator();desktopMenu.checked("Show desktop icons",store.prefs.getBoolean("show_desktop_icons",true),()->{store.prefs.edit().putBoolean("show_desktop_icons",!store.prefs.getBoolean("show_desktop_icons",true)).apply();renderDesktop();});showDesktopMenu(x,y);}
     private void desktopSortMenu(float x,float y){desktopMenu=new DesktopContextMenu(this);for(String mode:Arrays.asList("Name","Type"))desktopMenu.item(mode,"programs",()->{List<String> ids=store.desktop();java.text.Collator collator=java.text.Collator.getInstance();ids.sort((a,b)->{if(mode.equals("Type")&&store.isFolder(a)!=store.isFolder(b))return store.isFolder(a)?-1:1;return collator.compare(label(a),label(b));});store.desktop(ids);desktop.clearPositions();desktopChanged();});desktopMenu.show(root,x,y,shell.getPaddingLeft(),shell.getPaddingTop()+windowTopInset,shell.getPaddingRight(),shell.getPaddingBottom());}
     private void startOrbMenu(View anchor,float x,float y){if(desktopMenu!=null)desktopMenu.dismiss();startMenu.hide();if(tray!=null)tray.dismiss();desktopMenu=new DesktopContextMenu(this,"Start button context menu");desktopMenu.item("Open","orb",()->showStart(false));desktopMenu.item("Explore","files",()->open("@files"));desktopMenu.item("Search","search",()->showStart(true));desktopMenu.separator();desktopMenu.item("Properties","control",()->open("setting:page:taskbar"));ContextMenus.show(desktopMenu,anchor,x,y);}
     private void showStart(boolean search){if(previews!=null)previews.dismiss();if(tray!=null)tray.dismiss();startMenu.show(search);}
@@ -911,9 +911,9 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         desktopMenu.checked("Scrollable",!fit,()->setTaskbarStatic(false));
         desktopMenu.checked("Static",fit,()->setTaskbarStatic(true));
         desktopMenu.separator();boolean visible=false;for(DesktopWindow window:orderedWindows())if(window.getVisibility()==View.VISIBLE&&!window.minimizing())visible=true;
-        for(String[] mode:new String[][]{{"Cascade Windows","cascade"},{"Show Windows Stacked","stacked"},{"Show Windows Side by Side","side"}})desktopMenu.item(mode[0],"empty",visible,()->arrangeWindows(mode[1]));
+        for(String[] mode:new String[][]{{"Cascade Windows","cascade"},{"Tile Windows Horizontally","stacked"},{"Tile Windows Vertically","side"}})desktopMenu.item(mode[0],"empty",visible,()->arrangeWindows(mode[1]));
         if(!arrangementUndo.isEmpty())desktopMenu.item("Undo Window Arrangement","empty",this::undoArrangement);
-        desktopMenu.item(desktopHidden.isEmpty()?"Show the Desktop":"Show Open Windows","computer",this::showDesktop);desktopMenu.separator();desktopMenu.item("Switch Windows","computer",()->previews.show());desktopMenu.item("Flip 3D","appearance",()->previews.flip());desktopMenu.item("Saved Workspaces…","computer",this::showWorkspaces);desktopMenu.item("Start Task Manager","taskmanager",()->open("@taskmanager"));desktopMenu.separator();desktopMenu.item("Properties","control",()->open("setting:page:taskbar"));ContextMenus.show(desktopMenu,anchor,x,y);
+        desktopMenu.item(desktopHidden.isEmpty()?"Show the Desktop":"Show Open Windows","computer",this::showDesktop);desktopMenu.separator();desktopMenu.item("Switch Windows","computer",()->previews.show());desktopMenu.item("Saved Workspaces…","computer",this::showWorkspaces);desktopMenu.item("Start Task Manager","taskmanager",()->open("@taskmanager"));desktopMenu.separator();desktopMenu.item("Properties","control",()->open("setting:page:taskbar"));ContextMenus.show(desktopMenu,anchor,x,y);
     }
     private void setTaskbarStatic(boolean fit){
         store.prefs.edit().putBoolean("taskbar_static",fit).apply();
@@ -933,7 +933,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     private void applyWorkspace(JSONObject item){
         if(workspaceDialog!=null)workspaceDialog.dismiss();
-        for(DesktopWindow window:orderedWindows()){window.settle();window.setVisibility(View.GONE);}desktopHidden.clear();arrangementUndo.clear();sidebar.visible(item.optBoolean("sidebar",true));layoutWorkspace();
+        for(DesktopWindow window:orderedWindows()){window.settle();window.setVisibility(View.GONE);}desktopHidden.clear();arrangementUndo.clear();sidebar.visible(false);layoutWorkspace();
         JSONObject session=item.optJSONObject("session");if(session!=null){restoreSession(session.toString());JSONArray tools=session.optJSONArray("tools");if(tools!=null)for(int i=0;i<tools.length();i++){JSONObject saved=tools.optJSONObject(i);DesktopWindow window=saved==null?null:windows.get(saved.optString("id"));if(window!=null&&window.getParent()!=null&&saved.optJSONObject("geometry")!=null)window.restoreGeometry(saved.optJSONObject("geometry"));}}renderTaskbar();toast("Workspace opened");
     }
     private static boolean validExplorerId(String id){if(id==null||!id.startsWith("@explorer:"))return false;try{UUID.fromString(id.substring(10));return true;}catch(IllegalArgumentException ex){return false;}}
@@ -952,7 +952,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     private void window(String id,String title,View body){
         DesktopWindow current=windows.get(id);if(current!=null&&current.getParent()!=null){if(body instanceof VistaShell)((VistaShell)body).close();current.restore();return;}
-        DesktopWindow next=new DesktopWindow(this,workspace,title,body,wallpaper,this::renderTaskbar,store,id,layoutKey);next.safeTop(windowTopInset);next.onShake(()->shake(next));next.onPlacement(value->{if(recordableDesktop())steps.record("Window placement: "+value);});windows.put(id,next);
+        DesktopWindow next=new DesktopWindow(this,workspace,title,body,wallpaper,this::renderTaskbar,store,id,layoutKey);next.safeTop(windowTopInset);next.onPlacement(value->{if(recordableDesktop())steps.record("Window placement: "+value);});windows.put(id,next);
         if(workspace.getWidth()>0){next.open();renderTaskbar();}else workspace.post(()->{if(!destroyed&&next.getParent()==null){next.open();renderTaskbar();}});
     }
     private static final int NOTE_OPEN=5101,NOTE_SAVE=5102;
@@ -1122,10 +1122,8 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         int stock=DesktopBackgrounds.stockId(first);
         AeroWallpaper sample=new AeroWallpaper(this,stock>=0?stock:AeroWallpaper.SEVEN,false);
         content.addView(sample,new LinearLayout.LayoutParams(-1,dp(140)));
-        int tint=profile.optInt("aero_color");
-        paragraph(content,pictures.length()+" picture"+(pictures.length()==1?"":"s")+" · "+profile.optString("position")
-                +" · "+AeroGlass.COLOR_NAMES[Math.max(0,Math.min(AeroGlass.COLOR_NAMES.length-1,tint))]
-                +(profile.optBoolean("aero_transparency")?" glass":" solid"));
+        int scheme=Math.max(0,Math.min(XpTheme.NAMES.length-1,profile.optInt(XpTheme.KEY,0)));
+        paragraph(content,XpTheme.NAMES[scheme]+" · "+pictures.length()+" picture"+(pictures.length()==1?"":"s")+" · "+profile.optString("position"));
         AlertDialog dialog=Aero.dialog(this).setTitle(profile.optString("name","Theme preview")).setView(content)
                 .setNegativeButton("Cancel",null)
                 .setPositiveButton(index<0?"Save theme":"Apply",(d,which)->{
@@ -1249,7 +1247,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         if(id.startsWith("rename-shortcut:")){organizer("@organize","rename:"+id.substring(16));return;}
         if(id.startsWith("gadget:")&&GadgetCatalog.valid(id.substring(7))){gadgetAction(id.substring(7));return;}
         switch(id){
-            case "sidebar-show":sidebar.reveal();renderTaskbar();return;case "sidebar-hide":sidebar.visible(false);renderTaskbar();return;case "sidebar-apply":renderTaskbar();return;
+            case "sidebar-show":sidebar.visible(false);return;case "sidebar-hide":sidebar.visible(false);renderTaskbar();return;case "sidebar-apply":renderTaskbar();return;
             case "taskbar-refresh":applyTaskbarRows();layoutWorkspace();renderTaskbar();return;
             case "taskbar-usage-welcome":
                 if(ExternalTasks.permitted(this))open("setting:page:taskbar");
@@ -1264,7 +1262,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             case "restart-desktop":startMenu.hide();main.post(this::recreate);return;
             case "show-desktop":for(DesktopWindow w:windows.values())if(w.getParent()!=null&&w.getVisibility()==View.VISIBLE)w.minimize();startMenu.hide();return;
             case "repair-folders":if(initialization!=null)initialization.retryFolders();return;case "storage-access":storageSetup.show(true);return;case "glass":wallpaper.appearanceChanged();return;case "startup-preview":if(startup!=null)startup.preview();return;
-            case "chrome":applySystemChrome();return;case "desktop":renderDesktop();return;case "gadgets":sidebar.setActive(true);sidebar.refresh();return;case "wallpaper":wallpaper.theme(store.prefs.getInt("wallpaper",AeroWallpaper.SEVEN));return;
+            case "chrome":applySystemChrome();return;case "desktop":renderDesktop();return;case "gadgets":sidebar.visible(false);return;case "wallpaper":wallpaper.theme(store.prefs.getInt("wallpaper",AeroWallpaper.SEVEN));return;
             case "wallpaper-browse":chooseWallpapers(false);return;
             case "wallpaper-folder":chooseWallpapers(true);return;
             case "profile":startMenu.refreshName();return;case "profile-pick":chooseProfilePicture();return;case "home":home();return;case "shortcuts":manageShortcuts();return;case "new-folder":organizer("@organize","new");return;
@@ -1550,7 +1548,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     private PhotoGallery photoGallery(){
         DesktopWindow existing=windows.get("@photos");if(existing!=null&&existing.getParent()!=null&&existing.body instanceof PhotoGallery){existing.restore();return (PhotoGallery)existing.body;}
-        PhotoGallery gallery=new PhotoGallery(this,new PhotoGallery.Host(){public void openPicture(){try{startActivityForResult(new Intent(MainActivity.this,ExplorerPickerActivity.class).setAction(PickerSpec.ACTION).setType("image/*"),304);}catch(RuntimeException ex){toast("The picture picker could not be opened.");}}public void pictures(){explorer("@files","home");DesktopWindow files=windows.get("@files");if(files!=null&&files.body instanceof VistaExplorer)((VistaExplorer)files.body).openDevice("pictures");}public void caption(String title){DesktopWindow window=windows.get("@photos");if(window!=null&&!window.caption().equals(title)){window.caption(title);main.removeCallbacks(taskbarRender);main.post(taskbarRender);}}public void back(JSONObject context,String origin){DesktopWindow photo=windows.get("@photos");if(photo!=null)photo.minimize();String page=context.optString("page");if(!page.startsWith("folder:"))return;String target=Arrays.asList("@computer","@filemanagers","@files").contains(origin)||validExplorerId(origin)||FolderLinks.id(origin)?origin:"@files";DesktopWindow previous=windows.get(target);if(previous==null||previous.getParent()==null)explorer(target,page);else{previous.restore();if(previous.body instanceof VistaExplorer&&!((VistaExplorer)previous.body).page().equals(page))((VistaExplorer)previous.body).navigate(page);}}});window("@photos","Photo Gallery",gallery);return gallery;
+        PhotoGallery gallery=new PhotoGallery(this,new PhotoGallery.Host(){public void openPicture(){try{startActivityForResult(new Intent(MainActivity.this,ExplorerPickerActivity.class).setAction(PickerSpec.ACTION).setType("image/*"),304);}catch(RuntimeException ex){toast("The picture picker could not be opened.");}}public void pictures(){explorer("@files","home");DesktopWindow files=windows.get("@files");if(files!=null&&files.body instanceof VistaExplorer)((VistaExplorer)files.body).openDevice("pictures");}public void caption(String title){DesktopWindow window=windows.get("@photos");if(window!=null&&!window.caption().equals(title)){window.caption(title);main.removeCallbacks(taskbarRender);main.post(taskbarRender);}}public void back(JSONObject context,String origin){DesktopWindow photo=windows.get("@photos");if(photo!=null)photo.minimize();String page=context.optString("page");if(!page.startsWith("folder:"))return;String target=Arrays.asList("@computer","@filemanagers","@files").contains(origin)||validExplorerId(origin)||FolderLinks.id(origin)?origin:"@files";DesktopWindow previous=windows.get(target);if(previous==null||previous.getParent()==null)explorer(target,page);else{previous.restore();if(previous.body instanceof VistaExplorer&&!((VistaExplorer)previous.body).page().equals(page))((VistaExplorer)previous.body).navigate(page);}}});window("@photos","Picture and Fax Viewer",gallery);return gallery;
     }
     void openPhoto(Uri uri,String name,String mime,JSONObject source,String origin){RecentFiles.opened(store,uri,mime,name);photoGallery().open(uri,name,mime,source,origin);}
     private void viewDocument(Uri uri,String mime){viewDocument(uri,mime,null,false);}
@@ -1688,17 +1686,17 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     @Override public boolean dispatchKeyEvent(KeyEvent event){
         if(event.getAction()==KeyEvent.ACTION_DOWN&&event.getRepeatCount()==0&&videoOverlay==null&&!restoringBackup){
-            int key=event.getKeyCode();if(event.isMetaPressed()&&key==KeyEvent.KEYCODE_TAB){previews.flip();return true;}if(event.isAltPressed()&&key==KeyEvent.KEYCODE_TAB){previews.show();return true;}if(event.isCtrlPressed()&&event.isShiftPressed()&&key==KeyEvent.KEYCODE_ESCAPE){open("@taskmanager");return true;}
+            int key=event.getKeyCode();if(event.isAltPressed()&&key==KeyEvent.KEYCODE_TAB){previews.show();return true;}if(event.isCtrlPressed()&&event.isShiftPressed()&&key==KeyEvent.KEYCODE_ESCAPE){open("@taskmanager");return true;}
             if(event.isMetaPressed()&&key==KeyEvent.KEYCODE_D){showDesktop();return true;}
             if(event.isMetaPressed()&&key==KeyEvent.KEYCODE_E){open("@files");return true;}
             DesktopWindow front=null;for(DesktopWindow window:orderedWindows())if(window.getVisibility()==View.VISIBLE&&!window.minimizing())front=window;
             if(front!=null&&event.isMetaPressed()){
                 switch(key){
-                    case KeyEvent.KEYCODE_DPAD_LEFT: return front.snap(AeroSnap.Placement.LEFT);
-                    case KeyEvent.KEYCODE_DPAD_RIGHT: return front.snap(AeroSnap.Placement.RIGHT);
+
+
                     case KeyEvent.KEYCODE_DPAD_UP: front.maximize();return true;
                     case KeyEvent.KEYCODE_DPAD_DOWN: if(front.snapped()||front.maximized())front.restoreDown();else front.minimize();return true;
-                    case KeyEvent.KEYCODE_MOVE_HOME: shake(front);return true;
+
                 }
             }
             if(front!=null&&event.isAltPressed()&&key==KeyEvent.KEYCODE_F4){front.closeWindow();return true;}
@@ -1785,7 +1783,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     private boolean restoreTool(String id){DesktopWindow current=windows.get(id);if(current!=null&&current.getParent()!=null){current.restore();return true;}return false;}
     private void gadgetGallery(){startMenu.hide();if(restoreTool("@gadgets"))return;window("@gadgets","Desktop Gadget Gallery",new GadgetGallery(this,store,sidebar.weather,new GadgetGallery.Host(){public void open(String id){MainActivity.this.open(id);}public void action(String id){vistaAction(id);}public void changed(){sidebar.rebuild();}public void reveal(){sidebar.reveal();}public void align(String id){sidebar.alignAdded(id);}}));}
     private void gadgetPanel(String kind){if(!GadgetCatalog.extra(kind))return;String id="@gadget:"+kind;if(restoreTool(id))return;window(id,GadgetCatalog.title(kind),new GadgetPanel(this,store,kind,sidebar.feeds,sidebar.hardware,new GadgetPanel.Host(){public void open(String id){MainActivity.this.open(id);}public void action(String id){vistaAction(id);}public void changed(){sidebar.refresh();}public void feed(String url){List<String> enabled=store.gadgets();if(!enabled.contains("feeds")){enabled.add("feeds");store.gadgets(enabled);sidebar.rebuild();sidebar.reveal();}sidebar.feeds.configure(url);}public void refreshFeed(){sidebar.feeds.refresh(true);}public void article(String url){Uri uri=Uri.parse(url);if(Arrays.asList("http","https").contains(uri.getScheme()))launchSystem(new Intent(Intent.ACTION_VIEW,uri));}}));}
-    private void clockOptions(){controlPanel("@clock","Clock settings","clock");}
+    private void clockOptions(){if(!restoreTool("@clock"))window("@clock","Date and Time Properties",XpDateTimeProperties.create(this,vistaActions,()->{DesktopWindow clock=windows.get("@clock");if(clock!=null)clock.closeWindow();}));}
     private void stickyNote(){
         if(restoreTool("@sticky"))return;LinearLayout body=Aero.column(this);EditText editor=new EditText(this);editor.setTypeface(Aero.face(this));editor.setTextSize(16);editor.setTextColor(0xff5c4a1f);editor.setGravity(Gravity.TOP|Gravity.START);editor.setBackgroundColor(0xffffe889);Aero.pad(editor,14);editor.setHint("A little note…");editor.setContentDescription("Sticky note text");editor.setText(store.prefs.getString("gadget_note",""));editor.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int b,int c){}public void onTextChanged(CharSequence s,int a,int b,int c){store.prefs.edit().putString("gadget_note",s.toString()).apply();sidebar.refresh();}public void afterTextChanged(Editable e){}});body.addView(editor,new LinearLayout.LayoutParams(-1,-1));window("@sticky","Notes",body);
     }

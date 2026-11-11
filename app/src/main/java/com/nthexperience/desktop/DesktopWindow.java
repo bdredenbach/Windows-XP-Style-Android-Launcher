@@ -67,7 +67,7 @@ final class DesktopWindow extends LinearLayout {
         snapMinHeight=Aero.dp(context,WindowArrangement.MIN_STACK_HEIGHT_DP);
         snapOutline.setColor(0x3396d9ff);
         snapOutline.setStroke(Aero.dp(context,2),0xffb6e8ff);
-        setOrientation(VERTICAL); setElevation(Aero.dp(context,16));
+        setOrientation(VERTICAL); setElevation(0);
         glass=new AeroGlass(wallpaper,AeroGlass.WINDOW);setBackground(glass);
         setPadding(Aero.dp(context,3),Aero.dp(context,2),Aero.dp(context,3),Aero.dp(context,3));
         LinearLayout bar=new LinearLayout(context); bar.setGravity(Gravity.CENTER_VERTICAL);
@@ -139,7 +139,7 @@ final class DesktopWindow extends LinearLayout {
     void onShake(Runnable action){shake=action;}
     void onPlacement(java.util.function.Consumer<String> action){placementChanged=action;}
     boolean snap(Placement target){
-        if((target==Placement.LEFT||target==Placement.RIGHT)&&!canSplit())return false;
+        if(target==Placement.LEFT||target==Placement.RIGHT)return false;
         cancelCaptionDrag();
         place(target);
         return true;
@@ -151,10 +151,7 @@ final class DesktopWindow extends LinearLayout {
     void maximize(){if(!maximized())place(Placement.MAXIMIZED);restore();}
     void restoreDown(){settle();setVisibility(VISIBLE);bringToFront();place(Placement.FLOATING);}
     void closeWindow(){if(getParent()==null)return;dismissSystemMenu();settle();hideKeyboard();if(body instanceof XpNotepad)((XpNotepad)body).close();if(body instanceof VistaShell)((VistaShell)body).close();if(body instanceof WeatherPanel)((WeatherPanel)body).close();if(body instanceof BrowserPanel)((BrowserPanel)body).close();if(body instanceof PhotoGallery)((PhotoGallery)body).close();if(body instanceof TaskManagerPanel)((TaskManagerPanel)body).close();if(body instanceof RecyclePanel)((RecyclePanel)body).close();host.removeView(this);changed.run();}
-    void showSystemMenu(View anchor,float x,float y){dismissSystemMenu();systemMenu=new DesktopContextMenu(getContext(),"Window commands");systemMenu.item("Restore","empty",fitted()||getVisibility()!=VISIBLE||minimizing,()->{if(getVisibility()!=VISIBLE||minimizing)restore();else if(fitted())restoreDown();});systemMenu.item("Minimize","empty",getVisibility()==VISIBLE&&!minimizing,this::minimize);systemMenu.item("Maximize","empty",!maximized(),this::maximize);systemMenu.item("Snap left","empty",canSplit(),()->{restore();snap(Placement.LEFT);});
-        systemMenu.item("Snap right","empty",canSplit(),()->{restore();snap(Placement.RIGHT);});
-        systemMenu.item("Minimize or restore other windows","empty",shake);
-        systemMenu.separator();systemMenu.item("Close","close",this::closeWindow);ContextMenus.show(systemMenu,anchor,x,y);}
+    void showSystemMenu(View anchor,float x,float y){dismissSystemMenu();systemMenu=new DesktopContextMenu(getContext(),"Window commands");systemMenu.item("Restore","empty",fitted()||getVisibility()!=VISIBLE||minimizing,()->{if(getVisibility()!=VISIBLE||minimizing)restore();else if(fitted())restoreDown();});systemMenu.item("Minimize","empty",getVisibility()==VISIBLE&&!minimizing,this::minimize);systemMenu.item("Maximize","empty",!maximized(),this::maximize);        systemMenu.separator();systemMenu.item("Close","close",this::closeWindow);ContextMenus.show(systemMenu,anchor,x,y);}
     void dismissSystemMenu(){if(systemMenu!=null){systemMenu.dismiss();systemMenu=null;}}
     void arrange(int x,int y,int width,int height){settle();placement=Placement.FLOATING;normalW=Math.max(1,width);normalH=Math.max(1,height);floatingLeft=x;floatingTop=Math.max(0,y-safeTop);fitToHost();saveGeometry();}
     String caption(){return titleLabel.getText().toString();}
@@ -341,11 +338,6 @@ final class DesktopWindow extends LinearLayout {
     private void moveCaption(MotionEvent e){
         host.getLocationOnScreen(hostLocation);
         float x=e.getRawX()-hostLocation[0],y=e.getRawY()-hostLocation[1];
-        if(e.getActionMasked()==MotionEvent.ACTION_MOVE&&detectShake(x,y,e.getEventTime())){
-            cancelCaptionDrag();
-            shake.run();
-            return;
-        }
         if(!captionDragging){
             if(Math.hypot(x-downX,y-downY)<=touchSlop)return;
             captionDragging=true;
@@ -360,7 +352,7 @@ final class DesktopWindow extends LinearLayout {
         }
         setX(clamp(x-gripX,0,Math.max(0,hostWidth()-floatingWidth())));
         setY(clamp(y-gripY,safeTop,Math.max(safeTop,host.getHeight()-floatingHeight())));
-        showSnapPreview(AeroSnap.target(x,y,hostWidth(),safeTop,host.getHeight(),snapEdge,snapMinWidth,snapMinHeight));
+        showSnapPreview(Placement.FLOATING);
     }
 
     private boolean detectShake(float x,float y,long time){
@@ -513,8 +505,8 @@ final class DesktopWindow extends LinearLayout {
     private static Placement readPlacement(JSONObject value){
         if(value.optBoolean("maximized"))return Placement.MAXIMIZED;
         switch(value.optString("snap")){
-            case "LEFT": return Placement.LEFT;
-            case "RIGHT": return Placement.RIGHT;
+            case "LEFT": return Placement.FLOATING;
+            case "RIGHT": return Placement.FLOATING;
             default: return Placement.FLOATING;
         }
     }

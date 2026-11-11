@@ -11,6 +11,7 @@ import java.util.*;
 
 /** XP's five property sheets, with an unapplied draft shared by all tabs. */
 final class XpDisplayProperties extends LinearLayout {
+    private static final String[] XP_POSITIONS={"Center","Tile","Stretch"};
     static final String[] TABS={"Themes","Desktop","Screen Saver","Appearance","Settings"};
     private final DesktopStore store;
     private final JSONObject draft;
@@ -26,12 +27,12 @@ final class XpDisplayProperties extends LinearLayout {
         setOrientation(VERTICAL);setBackgroundColor(XpTheme.surface(context));setPadding(dp(8),dp(8),dp(8),dp(6));
         setContentDescription("XP Display Properties");
         if(!draft.has("selected"))put("selected",new JSONArray(DesktopBackgrounds.current(store.prefs)));
-        if(!draft.has("position"))put("position",store.prefs.getString("wallpaper_position","Fill"));
+        if(!draft.has("position")){String saved=store.prefs.getString("wallpaper_position","Stretch");put("position",Arrays.asList(XP_POSITIONS).contains(saved)?saved:"Stretch");}
         if(!draft.has("background"))put("background",store.prefs.getInt("wallpaper_bg",0));
         if(!draft.has("xpScheme"))put("xpScheme",XpTheme.scheme(context));
         tab=draft.optString("xpTab",initial);if(!Arrays.asList(TABS).contains(tab))tab="Themes";
         HorizontalScrollView bar=new HorizontalScrollView(context);bar.setHorizontalScrollBarEnabled(false);
-        tabs=new LinearLayout(context);bar.addView(tabs);addView(bar,new LayoutParams(-1,dp(40)));
+        tabs=new LinearLayout(context);bar.addView(tabs);addView(bar,new LayoutParams(-1,dp(32)));
         ScrollView scroll=new ScrollView(context);scroll.setFillViewport(true);body=Aero.column(context);body.setPadding(dp(12),dp(12),dp(12),dp(12));
         body.setBackground(Aero.panel(context,XpTheme.surface(context),XpTheme.surface(context),1,0xffaaa69c));scroll.addView(body);
         addView(scroll,new LayoutParams(-1,0,1));
@@ -47,7 +48,7 @@ final class XpDisplayProperties extends LinearLayout {
         if(values!=null)for(int i=0;i<Math.min(values.length(),DesktopBackgrounds.LIMIT);i++){String value=values.optString(i);if(DesktopBackgrounds.valid(value)&&!keys.contains(value))keys.add(value);}return keys;}
     private void render(){
         if(preview!=null){preview.close();preview=null;}
-        tabs.removeAllViews();for(String name:TABS){TextView item=Aero.text(getContext(),name,12,Aero.INK);item.setGravity(Gravity.CENTER);item.setPadding(dp(10),0,dp(10),0);item.setFocusable(true);item.setSelected(name.equals(tab));item.setContentDescription("Display tab: "+name);item.setBackground(XpControls.tab(getContext()));item.setOnClickListener(v->{tab=name;put("xpTab",tab);render();});tabs.addView(item,new LayoutParams(-2,dp(38)));}
+        tabs.removeAllViews();for(String name:TABS){TextView item=Aero.text(getContext(),name,12,Aero.INK);item.setGravity(Gravity.CENTER);item.setPadding(dp(10),0,dp(10),0);item.setFocusable(true);item.setSelected(name.equals(tab));item.setContentDescription("Display tab: "+name);item.setBackground(XpControls.tab(getContext()));item.setOnClickListener(v->{tab=name;put("xpTab",tab);render();});tabs.addView(item,new LayoutParams(-2,dp(31)));}
         body.removeAllViews();
         switch(tab){case "Themes":themes();break;case "Desktop":desktop();break;case "Appearance":appearance();break;case "Screen Saver":screenSaver();break;default:settings();}
         apply.setEnabled(changed());apply.setAlpha(apply.isEnabled()?1:.45f);
@@ -62,16 +63,14 @@ final class XpDisplayProperties extends LinearLayout {
     private void desktop(){
         monitor();label("Background:");List<String> keys=new ArrayList<>(),names=new ArrayList<>();
         for(int i=XpWallpapers.FIRST;i<DesktopBackgrounds.NAMES.length;i++){keys.add(DesktopBackgrounds.stock(i));names.add(DesktopBackgrounds.NAMES[i]);}
-        for(int i=0;i<XpWallpapers.FIRST;i++){keys.add(DesktopBackgrounds.stock(i));names.add(DesktopBackgrounds.NAMES[i]);}
-        List<String> selected=selected();for(String key:selected)if(DesktopBackgrounds.stockId(key)<0&&!keys.contains(key)){keys.add(key);names.add("My Picture "+(names.size()-DesktopBackgrounds.NAMES.length+1));}
+        List<String> selected=selected();int personal=0;for(String key:selected)if(!keys.contains(key)){keys.add(key);names.add("My Picture "+(++personal));}
         ListView list=new ListView(getContext());list.setContentDescription("Desktop background list");list.setBackgroundColor(Color.WHITE);list.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         list.setAdapter(new ArrayAdapter<>(getContext(),android.R.layout.simple_list_item_single_choice,names));
         int index=selected.isEmpty()?-1:keys.indexOf(selected.get(0));if(index>=0){list.setItemChecked(index,true);list.setSelection(index);}
         list.setOnItemClickListener((parent,item,position,id)->{put("selected",new JSONArray(Collections.singletonList(keys.get(position))));render();});body.addView(list,new LayoutParams(-1,dp(148)));
         if(selected.size()>1)label(selected.size()+" pictures in your current slide show. Choosing one background replaces the slide show.");
         button(body,"Browse…",()->actions.action("wallpaper-browse"));
-        label("Position:");selector(BackgroundPicker.POSITIONS,Math.max(0,Arrays.asList(BackgroundPicker.POSITIONS).indexOf(draft.optString("position","Fill"))),"Wallpaper position",value->{put("position",BackgroundPicker.POSITIONS[value]);render();});
-        button(body,"More pictures and slide show…",()->actions.open("setting:page:background"));
+        label("Position:");selector(XP_POSITIONS,Math.max(0,Arrays.asList(XP_POSITIONS).indexOf(draft.optString("position","Stretch"))),"Wallpaper position",value->{put("position",XP_POSITIONS[value]);render();});
         button(body,"Customize Desktop…",()->actions.open("setting:page:icons"));
     }
     private void appearance(){
@@ -99,7 +98,7 @@ final class XpDisplayProperties extends LinearLayout {
     }
     private void system(String action){try{getContext().startActivity(new Intent(action));}catch(RuntimeException unavailable){Toast.makeText(getContext(),"This setting is unavailable on this device.",Toast.LENGTH_LONG).show();}}
     private void monitor(){
-        FrameLayout frame=new FrameLayout(getContext());frame.setPadding(dp(7),dp(7),dp(7),dp(16));frame.setBackground(Aero.panel(getContext(),0xff777777,0xff333333,5,0xff1c1c1c));
+        FrameLayout frame=new FrameLayout(getContext());frame.setPadding(dp(13),dp(12),dp(13),dp(25));frame.setBackground(new XpMonitorFrame(getContext()));
         List<String> keys=selected();int id=keys.isEmpty()?-1:DesktopBackgrounds.stockId(keys.get(0));
         preview=new AeroWallpaper(getContext(),id<0?store.prefs.getInt("wallpaper",AeroWallpaper.SEVEN):id,false);
         preview.preview(keys.isEmpty()?DesktopBackgrounds.stock(AeroWallpaper.SEVEN):keys.get(0),draft.optString("position","Fill"),BackgroundPicker.COLORS[Math.max(0,Math.min(5,draft.optInt("background",0)))]);

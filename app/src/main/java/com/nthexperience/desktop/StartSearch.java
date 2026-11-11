@@ -15,13 +15,12 @@ final class StartSearch {
         for(AppCatalog.Entry app:apps){String title=store.name(app.id,app.label);if((title+" "+app.label).toLowerCase(Locale.ROOT).contains(q))result.add(new Result(app.id,title,"Programs","programs",app.icon,true));}
         if(q.isEmpty())return result;
         if((BrowserPanel.NAME+" browser web internet").toLowerCase(Locale.ROOT).contains(q))result.add(new Result("@browser",store.name("@browser",BrowserPanel.NAME),"Programs","browser",null,true));
-        if("photo gallery pictures images".contains(q))result.add(new Result("@photos","Photo Gallery","Programs","pictures",null,true));
+        if("photo gallery pictures images".contains(q))result.add(new Result("@photos","Picture and Fax Viewer","Programs","pictures",null,true));
         if("nth media player music audio mp3 video".contains(q))result.add(new Result(MediaLibrary.PLAYER,MediaLibrary.PLAYER_TITLE,"Programs","musicfile",null,true));
         if("nth media center music video".contains(q))result.add(new Result(MediaLibrary.CENTER,MediaLibrary.CENTER_TITLE,"Programs","videofile",null,true));
-        if("flip 3d aero window switcher".contains(q))result.add(new Result("@flip3d","Flip 3D","Programs","appearance",null,false));
         VistaControlPanel.searchItems(q,result);
-        for(String[] gadget:GadgetCatalog.ITEMS)if(GadgetCatalog.extra(gadget[0])&&(gadget[1]+" "+gadget[3]).toLowerCase(Locale.ROOT).contains(q))result.add(new Result("@gadget:"+gadget[0],gadget[1],"Gadgets",GadgetCatalog.icon(gadget[0]),null,false));
-        for(String[] note:new String[][]{{"note","Notepad","@notes"},{"gadget_note","Sticky note","@sticky"}}){String text=store.prefs.getString(note[0],"");if((note[1]+" "+text).toLowerCase(Locale.ROOT).contains(q))result.add(new Result(note[2],note[1],"Notes","notes",null,false));}
+        for(String[] gadget:GadgetCatalog.ITEMS)if(Arrays.asList("calculator","puzzle","dice").contains(gadget[0])&&GadgetCatalog.extra(gadget[0])&&(gadget[1]+" "+gadget[3]).toLowerCase(Locale.ROOT).contains(q))result.add(new Result("@gadget:"+gadget[0],gadget[1],gadget[0].equals("calculator")?"Accessories":"Games",GadgetCatalog.icon(gadget[0]),null,false));
+        for(String[] note:new String[][]{{"note","Notepad","@notes"}}){String text=store.prefs.getString(note[0],"");if((note[1]+" "+text).toLowerCase(Locale.ROOT).contains(q))result.add(new Result(note[2],note[1],"Notes","notes",null,false));}
         JSONArray files=LinkedFiles.list(store);for(int i=0;i<files.length();i++){JSONObject file=files.optJSONObject(i);if(file!=null&&file.optString("name").toLowerCase(Locale.ROOT).contains(q))result.add(new Result("search-file:"+file.optString("uri"),file.optString("name"),"Linked files","documentfile",null,false));}
         Set<String> seen=new HashSet<>();for(Result item:result)seen.add(item.id.startsWith("search-file:")?item.id.substring(12):item.id);
         JSONObject locations=FolderLinks.list(store);Iterator<String> linkKeys=locations.keys();while(linkKeys.hasNext()){String key=linkKeys.next();JSONObject link=locations.optJSONObject(key);if(link!=null&&link.optString("title").toLowerCase(Locale.ROOT).contains(q))result.add(new Result(key,store.name(key,link.optString("title")),"Folders","files",null,true));}
