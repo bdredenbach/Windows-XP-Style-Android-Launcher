@@ -13,6 +13,7 @@
         <activity android:name="com.nthexperience.desktop.TestAwayActivity" android:exported="true" android:theme="@android:style/Theme.Material.Light.NoActionBar" />
         <activity android:name="com.nthexperience.desktop.PickerCallerActivity" android:exported="true" android:theme="@android:style/Theme.Material.Light.NoActionBar" />
         <provider android:name="com.nthexperience.desktop.XpFeatureDocumentsProvider" android:authorities="${launcherApplicationId}.featuredocs" android:exported="true" android:grantUriPermissions="true" android:permission="android.permission.MANAGE_DOCUMENTS" />
+        <receiver android:name="com.nthexperience.desktop.XpFeatureGrantReceiver" android:exported="true" />
     </application>
     <instrumentation android:name="com.nthexperience.desktop.StorageSmoke" android:targetPackage="${launcherApplicationId}" android:functionalTest="true" />
     <instrumentation android:name="com.nthexperience.desktop.ContinuitySmoke" android:targetPackage="${launcherApplicationId}" android:functionalTest="true" />
