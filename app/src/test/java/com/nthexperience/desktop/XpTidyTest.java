@@ -48,6 +48,12 @@ public class XpTidyTest {
         }
     }
     @Test public void trayArtworkChangesForRealStatusVariants(){Set<Integer> hashes=new HashSet<>();for(int state=0;state<4;state++){Bitmap image=Bitmap.createBitmap(32,32,Bitmap.Config.ARGB_8888);Canvas canvas=new Canvas(image);canvas.scale(2,2);XpTrayArtwork.draw(canvas,state<2?1:2,50,false,state==0,state==3);int[] pixels=new int[1024];image.getPixels(pixels,0,32,0,0,32,32);hashes.add(Arrays.hashCode(pixels));image.recycle();}assertEquals(4,hashes.size());}
+    @Test public void unchangedTrayAndBalloonBoundsDoNotKeepRequestingLayout()throws Exception{
+        try(ActivityController<MainActivity> owner=home()){
+            View root=owner.get().getWindow().getDecorView();SystemTray tray=tray(owner.get());tray.show("volume");layout(root,393,800);View cover=find(root,"System tray flyout"),frame=((ViewGroup)cover).getChildAt(0);assertFalse(frame.isLayoutRequested());tray.bounds(0,0,0);assertFalse("Unchanged flyout geometry stays idle",frame.isLayoutRequested());tray.dismiss();FrameLayout work=(FrameLayout)cover.getParent();
+            java.lang.reflect.Field field=MainActivity.class.getDeclaredField("workspace");field.setAccessible(true);work=(FrameLayout)field.get(owner.get());XpTrayBalloon balloon=new XpTrayBalloon(work);balloon.show("Test notice","Existing content",()->{});layout(root,393,800);View body=find(root,"XP balloon: Test notice");assertFalse(body.isLayoutRequested());balloon.bounds(0,0,0,0);assertFalse("Unchanged balloon geometry stays idle",body.isLayoutRequested());balloon.dismiss();
+        }
+    }
     @Test public void trayPagesAndMenusRenderAllThemesInsideBothWorkAreas()throws Exception{
         File output=new File("build/xp-tidy-rendered");output.mkdirs();
         for(int scheme=0;scheme<6;scheme++)for(boolean landscape:new boolean[]{false,true}){

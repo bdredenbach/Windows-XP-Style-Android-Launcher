@@ -20,7 +20,9 @@
   alone. Existing portable backup keys retain the choices. It is available from
   tray/clock menus and Taskbar Properties, and extra icons can still be expanded.
 - All tray panels use XP captions and themed property-sheet surfaces. Their
-  dimensions respect the work area, taskbar, safe insets and orientation.
+  dimensions respect the work area, taskbar, safe insets and orientation. Repeated
+  unchanged bounds updates do not request another layout, allowing flyouts and
+  balloons to become idle instead of traversing every frame.
 - Shared context menus use small artwork, checked gutters, separators, blue/white
   selection and readable disabled text. Program submenu arrows align at the edge.
 - XP trackbars, segmented progress meters and radio/check controls replace
