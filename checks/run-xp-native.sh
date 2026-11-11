@@ -20,8 +20,9 @@ timeout -k 3s 120s adb install --no-streaming -r build-fixture/fixture-debug.apk
 timeout -k 3s 120s adb install --no-streaming -r build-apks/debug/app-debug.apk
 timeout -k 3s 120s adb install --no-streaming -r build-apks/androidTest/debug/app-debug-androidTest.apk
 result=0
-for entry in 'XpSmoke:xp-native.txt' 'XpIndependentRowsSmoke:xp-rows.txt' 'XpExperienceSmoke:xp-polish.txt'; do
+for entry in 'XpSmoke:xp-native.txt' 'XpIndependentRowsSmoke:xp-rows.txt' 'XpExperienceSmoke:xp-polish.txt' 'XpFeaturesSmoke:xp-features.txt'; do
   runner=${entry%%:*}; log=${entry#*:}
+  if [[ "$runner" == XpFeaturesSmoke ]]; then adb shell settings put global animator_duration_scale 0; fi
   if [[ "$runner" == XpExperienceSmoke ]]; then adb shell settings put global animator_duration_scale 1; fi
   timeout -k 2s 15s adb shell am force-stop "$pkg"
   timeout -k 2s 15s adb shell wm size reset

@@ -1,0 +1,20 @@
+package com.nthexperience.desktop;
+
+import android.content.*;
+import android.util.AtomicFile;
+import android.widget.*;
+import org.json.*;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+
+final class XpRestorePoints extends XpToolPanel {
+    private final LinearLayout points;private final File directory;
+    XpRestorePoints(Context c,DesktopStore store,Host host){super(c,store,host,"@restorepoints");directory=new File(c.getFilesDir(),"xp-restore-points");directory.mkdirs();command("Create Restore Point",this::create);command("Refresh",this::render);LinearLayout body=column();body.addView(text("Restore Nth Desktop to an earlier state",18));body.addView(text("Scope: desktop appearance, layout, shortcuts and settings. Your document drafts are kept. Preview a point before applying it through Backup and Restore.",13));points=Aero.column(c);body.addView(points);scroll(body);render();}
+    private void create(){EditText name=new EditText(getContext());name.setSingleLine();name.setHint("Describe this restore point");name.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(60)});Aero.dialog(getContext()).setTitle("Create Restore Point").setView(name).setPositiveButton("Create",(d,w)->{try{String label=name.getText().toString().trim();if(label.isEmpty()){say("Enter a restore-point description");return;}File[] existing=files();if(existing.length>=6){say("Delete a restore point first; six are supported");return;}JSONObject point=new JSONObject().put("name",label).put("created",System.currentTimeMillis()).put("backup",DesktopBackup.snapshot(store));write(new File(directory,UUID.randomUUID()+".json"),point.toString());render();say("Restore point created");}catch(Exception e){say("Restore point could not be created");}}).setNegativeButton("Cancel",null).show();}
+    static void write(File file,String data)throws IOException{AtomicFile atomic=new AtomicFile(file);FileOutputStream out=atomic.startWrite();try{out.write(data.getBytes(StandardCharsets.UTF_8));atomic.finishWrite(out);}catch(Exception e){atomic.failWrite(out);throw e;}}
+    private File[] files(){File[] values=directory.listFiles((dir,name)->name.endsWith(".json"));if(values==null)return new File[0];Arrays.sort(values,Comparator.comparingLong(File::lastModified).reversed());return values;}
+    private JSONObject read(File file)throws Exception{try(FileInputStream in=new FileInputStream(file)){return new JSONObject(new String(XpDocuments.read(in,DesktopBackup.MAX_BYTES),StandardCharsets.UTF_8));}}
+    static String preservingDrafts(JSONObject backup,DesktopStore store)throws Exception{JSONObject copy=new JSONObject(backup.toString()),settings=copy.getJSONObject("settings"),current=DesktopBackup.snapshot(store).getJSONObject("settings");for(String key:new String[]{"note","gadget_note","gadget_data","xp_wordpad_html","xp_wordpad_rtf"})if(current.has(key))settings.put(key,current.get(key));DesktopBackup.parse(copy.toString());return copy.toString();}
+    private void render(){points.removeAllViews();File[] values=files();if(values.length==0)points.addView(text("No restore points yet. Create one before changing your desktop.",13));for(File file:values)try{JSONObject point=read(file);TextView item=Aero.button(getContext(),point.getString("name")+"\n"+java.text.DateFormat.getDateTimeInstance().format(new Date(point.getLong("created"))),()->{try{host.restorePreview(preservingDrafts(point.getJSONObject("backup"),store));}catch(Exception e){say("This point could not be opened");}});item.setContentDescription("Preview restore point: "+point.getString("name"));points.addView(item,new LayoutParams(-1,dp(62)));ContextMenus.bind(item,(x,y)->{DesktopContextMenu menu=new DesktopContextMenu(getContext(),"Restore point commands");menu.item("Delete restore point…","delete",()->Aero.dialog(getContext()).setTitle("Delete restore point?").setMessage(point.optString("name")).setPositiveButton("Delete",(d,w)->{file.delete();render();}).setNegativeButton("Cancel",null).show());ContextMenus.show(menu,item,x,y);});}catch(Exception ignored){}say(values.length+" of 6 restore points");}
+}

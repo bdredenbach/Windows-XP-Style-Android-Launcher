@@ -84,6 +84,8 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     private WeatherLocation weatherLocation;
     private LinearLayout shell,taskItems;private HorizontalScrollView taskStrip;private int taskViewportWidth;
     private StartMenu startMenu;
+    private XpDocuments xpDocuments;
+    private java.lang.ref.WeakReference<EditText> xpTextTarget=new java.lang.ref.WeakReference<>(null);
     private LinearLayout taskbarView;private FrameLayout taskClip;
     private View taskbarSlot;private XpTaskbarAutoHide autoHide;private android.app.Dialog xpSession;private String sessionPanel="";
     private final List<String> visibleTaskOrder=new ArrayList<>();
@@ -119,7 +121,10 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         if(Build.VERSION.SDK_INT>=30)getWindow().setDecorFitsSystemWindows(false);
         else getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         brightness=new BrightnessControl(this);brightness.apply();previews=new WindowPreviews(this,new WindowPreviews.Host(){public List<DesktopWindow> windows(){return orderedWindows();}public List<String> external(){List<String> ids=new ArrayList<>();for(String id:ExternalTasks.list())if(entries.containsKey(id))ids.add(id);return ids;}public String label(String id){return MainActivity.this.label(id);}public void open(String id){MainActivity.this.open(id);}public void preparePreview(){startMenu.hide();if(tray!=null)tray.dismiss();}public View wallpaper(){return wallpaper;}public void showDesktop(){if(desktopHidden.isEmpty())MainActivity.this.showDesktop();}});
-        buildDesktop();if(saved!=null&&!saved.getString("xp_session_panel","").isEmpty()){String panel=saved.getString("xp_session_panel");root.post(()->showXpSession(panel));}weatherLocation=new WeatherLocation(this,store,sidebar.weather,()->store.gadgets().contains("weather"),this::updateWeatherSummary);applySystemChrome();String backupStatus=getIntent().getStringExtra("backup_status");if(backupStatus!=null){getIntent().removeExtra("backup_status");main.post(()->toast(backupStatus));}
+        buildDesktop();xpDocuments=new XpDocuments(this,new XpDocuments.Host(){
+            public void opened(String id,byte[] data,String name){MainActivity.this.open(id);DesktopWindow w=windows.get(id);try{if(w!=null&&w.body instanceof XpToolPanel)((XpToolPanel)w.body).importDocument(data,name);}catch(Exception e){message(id,"Could not open this document: "+e.getMessage());}}
+            public void message(String id,String text){DesktopWindow w=windows.get(id);if(w!=null&&w.body instanceof XpToolPanel)((XpToolPanel)w.body).say(text);else toast(text);}
+        });if(saved!=null&&!saved.getString("xp_session_panel","").isEmpty()){String panel=saved.getString("xp_session_panel");root.post(()->showXpSession(panel));}weatherLocation=new WeatherLocation(this,store,sidebar.weather,()->store.gadgets().contains("weather"),this::updateWeatherSummary);applySystemChrome();String backupStatus=getIntent().getStringExtra("backup_status");if(backupStatus!=null){getIntent().removeExtra("backup_status");main.post(()->toast(backupStatus));}
         handleRequestedTool();
         if(saved!=null&&saved.containsKey("desktop_session")){
             String session=saved.getString("desktop_session");
@@ -223,7 +228,9 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
                     int row=rows.rowAt(event.getY());
                     if(rows.expanded&&(event.getX()<rows.rowStart(row)||event.getX()>=rows.rowEnd(row)))return false;
                 }
-                return super.dispatchTouchEvent(event);
+                boolean handled=super.dispatchTouchEvent(event);
+        if(event.getActionMasked()==MotionEvent.ACTION_UP&&getCurrentFocus() instanceof EditText){EditText field=(EditText)getCurrentFocus();if(!isInsideKeyboard(field))xpTextTarget=new java.lang.ref.WeakReference<>(field);}
+        return handled;
             }
         };taskClip.setClipChildren(true);taskClip.addView(strip,new FrameLayout.LayoutParams(-1,-1));taskbar.addView(taskClip,new LinearLayout.LayoutParams(0,dp(XpMetrics.ROW),1));
         for(View surface:new View[]{taskbar,taskClip,strip,taskItems})ContextMenus.bind(surface,(x,y)->taskbarMenu(surface,x,y));
@@ -714,10 +721,12 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     View icon(String id,int size){
         AppCatalog.Entry entry=entries.get(id);
         if(entry!=null){ImageView image=new ImageView(this);image.setImageDrawable(entry.icon);image.setScaleType(ImageView.ScaleType.FIT_CENTER);image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);return image;}
+        if(XpPrograms.valid(id))return new AeroIcon(this,XpPrograms.get(id).icon);
         return new AeroIcon(this,FolderLinks.id(id)?"files":id.equals("@recycle")?(recycleFull?"recycle-full":"recycle"):id.startsWith("@gadget:")?GadgetCatalog.icon(id.substring(8)):store.isFolder(id)||id.startsWith("@organizer:")||id.equals("@filemanagers")||id.equals("@organize")?"folderapps":id.equals("@welcome")?"orb":id.equals("@backup")?"drive":id.equals("@quicklaunch")?"programs":id.equals("@photos")?"pictures":id.equals(MediaLibrary.PLAYER)?"mediaplayer":id.equals(MediaLibrary.CENTER)?"mediacenter":id.startsWith("@")?id.substring(1):"apps");
     }
     private String label(String id){return store.name(id,defaultLabel(id));}
     private String defaultLabel(String id){
+        if(XpPrograms.valid(id))return XpPrograms.get(id).title;
         JSONObject location=FolderLinks.get(store,id);if(location!=null)return location.optString("title","Folder");
         if(id.startsWith("@gadget:")&&GadgetCatalog.extra(id.substring(8)))return GadgetCatalog.title(id.substring(8));
         switch(id){case MediaLibrary.PLAYER:return MediaLibrary.PLAYER_TITLE;case MediaLibrary.CENTER:return MediaLibrary.CENTER_TITLE;case "@recycle":return "Recycle Bin";case "@workspaces":return "Saved Workspaces";case "@recent":return "Recent Items";case "@taskmanager":return "Task Manager";case "@actioncenter":return "Security Center";case "@welcome":return "Help and Support Center";case "@organize":return "Desktop Organization";case "@quicklaunch":return "Quick Launch";case "@backup":return "Backup and Restore";case "@control":return "Control Panel";case "@system":return "System";case "@filemanagers":return "File Managers";case "@weather":return "Weather";case "@clock":return "Clock";case "@gadgets":return "Gadget Gallery";case "@sticky":return "Notes";case "@calendar":return "Calendar";case "@computer":return "My Computer";case "@browser":return BrowserPanel.NAME;case "@photos":return "Picture and Fax Viewer";case "@files":return "Files";case "@documents":return "My Documents";case "@pictures":return "My Pictures";case "@music":return "My Music";case "@flip3d":return "Switch Programs";case "@notes":return "Notepad";case "@appearance":return "Display Properties";default:AppCatalog.Entry app=entries.get(id);return app==null?"Unavailable app":app.label;}
@@ -732,6 +741,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             }
         }
         startMenu.hide();if(tray!=null)tray.dismiss();
+        if(XpPrograms.valid(id)){if(!restoreTool(id))window(id,XpPrograms.get(id).title,XpPrograms.create(this,store,id,xpToolHost));return;}
         if(FolderLinks.id(id)){JSONObject link=FolderLinks.get(store,id);if(link==null){toast("This folder shortcut is unavailable.");return;}explorer(id,link.optString("page","home"));return;}
         if(validExplorerId(id)){explorer(id,"home");return;}
         if(id.startsWith("xp:")){startMenu.hide();xpAction(id);return;}
@@ -978,6 +988,25 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         int x=origin[0]+Math.min(taskbarView.getWidth()-dp(80),dp(142));
         return new android.graphics.Rect(x,origin[1]+taskbarView.getHeight()-dp(XpMetrics.TASKBAR),x+dp(80),origin[1]+taskbarView.getHeight());
     }
+    private final XpToolPanel.Host xpToolHost=new XpToolPanel.Host(){
+        public void open(String id){MainActivity.this.open(id);}
+        public void openFile(Uri uri,String mime,String name){if(name.toLowerCase(Locale.ROOT).endsWith(".rtf")||mime!=null&&mime.contains("rtf"))loadXpDocument("@wordpad",uri);else viewDocument(uri,mime,name,false);}
+        public void openFolder(Uri uri,String name){try{String tree=android.provider.DocumentsContract.getTreeDocumentId(uri);String page=DocumentFolders.rootPage(android.provider.DocumentsContract.buildTreeDocumentUri(uri.getAuthority(),tree).toString(),"Search location");String doc=android.provider.DocumentsContract.getDocumentId(uri);if(!tree.equals(doc))page=DocumentFolders.childPage(page,new DocumentFolders.Item(doc,name,android.provider.DocumentsContract.Document.MIME_TYPE_DIR,0,0));explorer("@files",page);DesktopWindow w=windows.get("@files");if(w!=null&&w.body instanceof VistaExplorer)((VistaExplorer)w.body).navigate(page);}catch(Exception e){toast("This folder is no longer available");}}
+        public void pick(String id,String mime){xpDocuments.pick(id,mime);}
+        public void export(String id,String name,String mime,byte[] bytes){xpDocuments.export(id,name,mime,bytes);}
+        public boolean microphone(){return checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)==android.content.pm.PackageManager.PERMISSION_GRANTED;}
+        public void requestMicrophone(){requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO},6201);}
+        public List<AppCatalog.Entry> apps(){return new ArrayList<>(entries.values());}
+        public List<String> tasks(){List<String> result=new ArrayList<>();for(DesktopWindow w:orderedWindows())result.add(w.caption()+" — "+(w.getVisibility()==View.VISIBLE?"Running":"Minimized"));return result;}
+        public void shellChanged(){renderDesktop();renderTaskbar();}
+        public boolean type(String value){EditText edit=xpTextTarget.get();if(edit==null||!edit.isAttachedToWindow()||!edit.isShown()||!edit.isEnabled())return false;int a=Math.max(0,edit.getSelectionStart()),b=Math.max(0,edit.getSelectionEnd());int start=Math.min(a,b),end=Math.max(a,b);if(value.equals("\b")){if(start==end&&start>0)start=Character.offsetByCodePoints(edit.getText(),start,-1);edit.getText().delete(start,end);}else edit.getText().replace(start,end,value);return true;}
+        public android.graphics.Bitmap desktopPicture(View exclude){List<DesktopWindow> hidden=new ArrayList<>();List<Integer> visibility=new ArrayList<>();for(DesktopWindow w:orderedWindows())if(w.body==exclude||w.body instanceof BrowserPanel&&((BrowserPanel)w.body).hasPrivateTabs()){hidden.add(w);visibility.add(w.getVisibility());w.setVisibility(View.INVISIBLE);}try{float scale=Math.min(1,1024f/Math.max(root.getWidth(),root.getHeight()));android.graphics.Bitmap bitmap=android.graphics.Bitmap.createBitmap(Math.max(1,Math.round(root.getWidth()*scale)),Math.max(1,Math.round(root.getHeight()*scale)),android.graphics.Bitmap.Config.ARGB_8888);android.graphics.Canvas canvas=new android.graphics.Canvas(bitmap);canvas.scale(scale,scale);root.draw(canvas);return bitmap;}finally{for(int i=0;i<hidden.size();i++)hidden.get(i).setVisibility(visibility.get(i));}}
+        public String windowText(View exclude){List<DesktopWindow> list=orderedWindows();Collections.reverse(list);for(DesktopWindow w:list)if(w.getVisibility()==View.VISIBLE&&w.body!=exclude&&!(w.body instanceof XpKeyboard)&&!(w.body instanceof BrowserPanel)){StringBuilder text=new StringBuilder();collectXpText(w.body,text);return text.toString();}return "";}
+        public void restorePreview(String json){if(backupBusy)return;backupBusy=true;worker.execute(()->{try{DesktopBackup.Plan plan=DesktopBackup.parse(json);DesktopBackup.stage(MainActivity.this,DesktopBackup.PENDING,plan.text);main.post(()->{if(destroyed)return;backupBusy=false;restorePlan=plan;backupMessage="Review this Nth desktop restore point.";backupPanel(true);});}catch(Exception e){main.post(()->{backupBusy=false;if(!destroyed)toast("Restore point could not be prepared");});}});}
+    };
+    private boolean isInsideKeyboard(View view){while(view!=null){if(view instanceof XpKeyboard)return true;view=view.getParent() instanceof View?(View)view.getParent():null;}return false;}
+    private void collectXpText(View view,StringBuilder text){if(text.length()>=8000||view.getVisibility()!=View.VISIBLE)return;if(view instanceof TextView){TextView field=(TextView)view;if(!(field.getTransformationMethod() instanceof android.text.method.PasswordTransformationMethod))text.append(field.getText()).append('\n');}if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount()&&text.length()<8000;i++)collectXpText(((ViewGroup)view).getChildAt(i),text);if(text.length()>8000)text.setLength(8000);}
+    private void loadXpDocument(String id,Uri uri){if(!"content".equals(uri.getScheme())){toast("Choose a document-provider file");return;}worker.execute(()->{try(java.io.InputStream in=getContentResolver().openInputStream(uri)){byte[] bytes=XpDocuments.read(in,XpDocuments.LIMIT);String name=noteFileName(uri);main.post(()->{if(destroyed)return;open(id);DesktopWindow w=windows.get(id);try{((XpToolPanel)w.body).importDocument(bytes,name);}catch(Exception e){((XpToolPanel)w.body).say("Could not open this document: "+e.getMessage());}});}catch(Exception e){main.post(()->{if(!destroyed)toast("This document could not be opened");});}});}
     private static final int NOTE_OPEN=5101,NOTE_SAVE=5102;
     private int noteGeneration;private Uri noteUri;private String noteName="Untitled",pendingNoteSave;
     private void notes(){
@@ -1221,13 +1250,17 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         });
     }
     private void xpAction(String id){
+        if(id.equals("xp:exportbackup")){exportBackup();return;}if(id.equals("xp:importbackup")){importBackup();return;}
+        if(id.startsWith("xp:paint-file:")){loadXpDocument("@paint",Uri.parse(Uri.decode(id.substring(14))));return;}
+        if(id.startsWith("xp:wordpad-file:")){loadXpDocument("@wordpad",Uri.parse(Uri.decode(id.substring(16))));return;}
+
         if(id.equals("xp:mail")){try{startActivity(Intent.makeMainSelectorActivity(Intent.ACTION_MAIN,Intent.CATEGORY_APP_EMAIL));}catch(RuntimeException unavailable){toast("Choose or install an Android mail app to use E-mail.");}return;}
         if(id.equals("xp:run")){
             EditText command=new EditText(this);command.setSingleLine();command.setTextSize(16);command.setHint("App name, notepad, explorer or control");command.setContentDescription("Open program");
             AlertDialog dialog=Aero.dialog(this).setTitle("Run").setMessage("Type the name of an installed app or an Nth tool to open it.").setView(command).setPositiveButton("OK",null).setNegativeButton("Cancel",null).create();
             dialog.setOnShowListener(ignored->dialog.getButton(-1).setOnClickListener(v->{
-                String text=command.getText().toString().trim(),destination=null;
-                switch(text.toLowerCase(java.util.Locale.ROOT)){
+                String text=command.getText().toString().trim(),destination=XpPrograms.command(text);
+                if(destination==null)switch(text.toLowerCase(java.util.Locale.ROOT)){
                     case "notepad":case "notepad.exe":destination="@notes";break;
                     case "explorer":case "explorer.exe":destination="@files";break;
                     case "control":case "control.exe":destination="@control";break;
@@ -1627,6 +1660,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
+        if(xpDocuments!=null&&xpDocuments.result(request,result,data))return;
         if(request==NOTE_OPEN||request==NOTE_SAVE){noteResult(request,result,data);return;}
         if(request==AppUninstaller.REQUEST){String removed=AppUninstaller.returned(this,store);if(removed!=null)worker.execute(()->DesktopCache.forgetPackage(getApplicationContext(),removed));DesktopCache.invalidate();scanApps();return;}
         if(initialization!=null&&initialization.result(request,result,data)){if(request==REQUEST_HOME)homeRequestInFlight=false;return;}
@@ -1710,6 +1744,10 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         if(event.getAction()==KeyEvent.ACTION_DOWN&&event.getRepeatCount()==0&&videoOverlay==null&&!restoringBackup){
             int key=event.getKeyCode();if(event.isCtrlPressed()&&event.isShiftPressed()&&key==KeyEvent.KEYCODE_ESCAPE){open("@taskmanager");return true;}
             if(event.isMetaPressed()&&key==KeyEvent.KEYCODE_D){showDesktop();return true;}
+            if(event.isMetaPressed()&&key==KeyEvent.KEYCODE_R){open("xp:run");return true;}
+            if(event.isMetaPressed()&&key==KeyEvent.KEYCODE_F||key==KeyEvent.KEYCODE_F3){open("@search");return true;}
+            if(key==KeyEvent.KEYCODE_F1){open("@welcome");return true;}
+            if(event.isCtrlPressed()&&key==KeyEvent.KEYCODE_ESCAPE){showStart(false);return true;}
             if(event.isMetaPressed()&&key==KeyEvent.KEYCODE_E){open("@files");return true;}
             DesktopWindow front=null;for(DesktopWindow window:orderedWindows())if(window.getVisibility()==View.VISIBLE&&!window.minimizing())front=window;
             if(front!=null&&event.isMetaPressed()){
@@ -1727,7 +1765,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         return super.dispatchKeyEvent(event);
     }
     @Override public void onBackPressed(){handleBack();}
-    private void handleRequestedTool(){String tool=getIntent().getStringExtra("open_tool");if(tool==null)return;getIntent().removeExtra("open_tool");if(Arrays.asList("@files","@computer","@control","@appearance","@system","@filemanagers","@notes","@gadgets","@backup","@browser","@photos","@taskmanager","@recycle","@recent","@actioncenter",MediaLibrary.PLAYER,MediaLibrary.CENTER).contains(tool))afterDesktopReady(()->open(tool));}
+    private void handleRequestedTool(){String tool=getIntent().getStringExtra("open_tool");if(tool==null)return;getIntent().removeExtra("open_tool");if(XpPrograms.valid(tool)||Arrays.asList("@files","@computer","@control","@appearance","@system","@filemanagers","@notes","@gadgets","@backup","@browser","@photos","@taskmanager","@recycle","@recent","@actioncenter",MediaLibrary.PLAYER,MediaLibrary.CENTER).contains(tool))afterDesktopReady(()->open(tool));}
     @Override public void onWindowFocusChanged(boolean focused){
         super.onWindowFocusChanged(focused);
         if(!focused||store==null||destroyed)return;
@@ -1739,12 +1777,12 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     void startupSetupReady(){if(restoreStorageSetup){restoreStorageSetup=false;storageSetup.show(true);}}
     void storageFolderSetup(){afterDesktopReady(()->{explorer("@computer","computer");chooseLinkedFolder("@computer");});}
     @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);closeMediaCenter();DesktopWindow currentBrowser=windows.get("@browser");if(currentBrowser!=null&&currentBrowser.body instanceof BrowserPanel)((BrowserPanel)currentBrowser.body).exitFullScreen();handleRequestedTool();if(desktopMenu!=null)desktopMenu.dismiss();if(tray!=null)tray.dismiss();if(startMenu!=null){startMenu.hide();startMenu.refreshHome();}}
-    @Override protected void onResume(){super.onResume();if(autoHide!=null)autoHide.resume();if(initialization!=null)initialization.resumed();taskProgressActive=true;nextDownloadPoll=0;main.removeCallbacks(taskProgressTick);if(!taskProgressSurfaces.isEmpty())main.post(taskProgressTick);if(wallpaper!=null)wallpaper.resumeSlides();if(brightness!=null)brightness.apply();if(restoringBackup)return;refreshUsageAccess();boolean access=StorageAccess.has(this);if(storageAllowed!=access){storageAllowed=access;filesChanged();}pausedSession=null;if(startMenu!=null)startMenu.refreshHome();main.removeCallbacks(clockTick);main.post(clockTick);if(store!=null)scanApps();if(sidebar!=null)sidebar.setActive(true);if(startup!=null)startup.resume();if(tray!=null)tray.start();if(weatherLocation!=null)weatherLocation.resume();for(DesktopWindow tool:windows.values()){if(tool.body instanceof TaskManagerPanel)((TaskManagerPanel)tool.body).active(true);if(tool.body instanceof GadgetPanel)((GadgetPanel)tool.body).active(true);if(tool.body instanceof BrowserPanel)((BrowserPanel)tool.body).active(true);if(tool.body instanceof PhotoGallery)((PhotoGallery)tool.body).active(true);}}
+    @Override protected void onResume(){super.onResume();for(DesktopWindow w:windows.values())if(w.body instanceof XpToolPanel)((XpToolPanel)w.body).active(true);if(autoHide!=null)autoHide.resume();if(initialization!=null)initialization.resumed();taskProgressActive=true;nextDownloadPoll=0;main.removeCallbacks(taskProgressTick);if(!taskProgressSurfaces.isEmpty())main.post(taskProgressTick);if(wallpaper!=null)wallpaper.resumeSlides();if(brightness!=null)brightness.apply();if(restoringBackup)return;refreshUsageAccess();boolean access=StorageAccess.has(this);if(storageAllowed!=access){storageAllowed=access;filesChanged();}pausedSession=null;if(startMenu!=null)startMenu.refreshHome();main.removeCallbacks(clockTick);main.post(clockTick);if(store!=null)scanApps();if(sidebar!=null)sidebar.setActive(true);if(startup!=null)startup.resume();if(tray!=null)tray.start();if(weatherLocation!=null)weatherLocation.resume();for(DesktopWindow tool:windows.values()){if(tool.body instanceof TaskManagerPanel)((TaskManagerPanel)tool.body).active(true);if(tool.body instanceof GadgetPanel)((GadgetPanel)tool.body).active(true);if(tool.body instanceof BrowserPanel)((BrowserPanel)tool.body).active(true);if(tool.body instanceof PhotoGallery)((PhotoGallery)tool.body).active(true);}}
     @Override protected void onStop(){
         if(playback!=null)playback.player.pause();
         super.onStop();
     }
-    @Override protected void onPause(){if(autoHide!=null)autoHide.pause();if(initialization!=null)initialization.paused();
+    @Override protected void onPause(){for(DesktopWindow w:windows.values())if(w.body instanceof XpToolPanel)((XpToolPanel)w.body).active(false);if(autoHide!=null)autoHide.pause();if(initialization!=null)initialization.paused();
         if(usageSettingsRequest!=0)usageSettingsLeft=true;
         if(taskbarReorder!=null)taskbarReorder.cancel();taskProgressActive=false;main.removeCallbacks(taskProgressTick);if(jumpMenu!=null)jumpMenu.dismiss();if(wallpaper!=null)wallpaper.pauseSlides();if(workspaceDialog!=null)workspaceDialog.dismiss();DesktopSounds.stop();if(previews!=null)previews.dismiss();for(DesktopWindow tool:windows.values()){if(tool.body instanceof PhotoGallery)((PhotoGallery)tool.body).active(false);if(tool.body instanceof BrowserPanel){((BrowserPanel)tool.body).save();((BrowserPanel)tool.body).active(false);}if(tool.body instanceof TaskManagerPanel)((TaskManagerPanel)tool.body).active(false);tool.dismissSystemMenu();tool.cancelCaptionDrag();tool.cancelResize();if(tool.body instanceof GadgetPanel)((GadgetPanel)tool.body).active(false);if(tool.body instanceof VistaExplorer)((VistaExplorer)tool.body).dismissMenus();}if(tray!=null)tray.stop();if(startup!=null)startup.pause();pausedSession=restoringBackup?null:captureSession();if(desktopMenu!=null)desktopMenu.dismiss();super.onPause();main.removeCallbacks(clockTick);if(sidebar!=null)sidebar.setActive(false);if(weatherLocation!=null)weatherLocation.pause();if(startMenu!=null)startMenu.hide();}
     @Override public void onConfigurationChanged(android.content.res.Configuration config){
@@ -1767,14 +1805,14 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             JSONObject session=new JSONObject(saved);JSONArray tools=session.optJSONArray("tools");
             if(tools!=null)for(int i=0;i<tools.length();i++){
                 JSONObject item=tools.optJSONObject(i);if(item==null)continue;String id=item.optString("id");
-                if(!id.startsWith("@organizer:")&&!id.startsWith("folder:")&&!validExplorerId(id)&&!FolderLinks.id(id)&&!(id.startsWith("@gadget:")&&GadgetCatalog.extra(id.substring(8)))&&!Arrays.asList("@notes","@sticky","@calendar","@gadgets","@clock","@weather","@appearance","@computer","@control","@system","@files","@documents","@pictures","@music","@filemanagers","@organize","@quicklaunch","@backup","@welcome","@browser","@photos","@taskmanager","@recycle","@recent","@actioncenter",MediaLibrary.PLAYER).contains(id)&&!store.isFolder(id))continue;
+                if(!XpPrograms.valid(id)&&!id.startsWith("@organizer:")&&!id.startsWith("folder:")&&!validExplorerId(id)&&!FolderLinks.id(id)&&!(id.startsWith("@gadget:")&&GadgetCatalog.extra(id.substring(8)))&&!Arrays.asList("@notes","@sticky","@calendar","@gadgets","@clock","@weather","@appearance","@computer","@control","@system","@files","@documents","@pictures","@music","@filemanagers","@organize","@quicklaunch","@backup","@welcome","@browser","@photos","@taskmanager","@recycle","@recent","@actioncenter",MediaLibrary.PLAYER).contains(id)&&!store.isFolder(id))continue;
                 if(id.startsWith("@organizer:")||(id.startsWith("folder:")&&!store.isFolder(id)))organizer(id,"desktop");else open(id);DesktopWindow tool=windows.get(id);if(tool==null)continue;tool.readGeometry(item.optJSONObject("geometry"));tool.setVisibility(item.optBoolean("visible",true)?View.VISIBLE:View.GONE);ToolViewState.restore(tool,item.optJSONObject("ui"));
             }
             JSONArray hidden=session.optJSONArray("desktopHidden");if(hidden!=null)for(int i=0;i<hidden.length();i++){String id=hidden.optString(i);DesktopWindow tool=windows.get(id);if(tool!=null&&tool.getVisibility()!=View.VISIBLE)desktopHidden.put(id,tool);}
             desktopScroll.post(()->desktopScroll.scrollTo(0,session.optInt("desktopScroll")));startMenu.restore(session.optJSONObject("start"));renderTaskbar();
         }catch(JSONException ignored){}
     }
-    @Override protected void onDestroy(){if(autoHide!=null)autoHide.close();if(xpSession!=null){xpSession.setOnDismissListener(null);xpSession.dismiss();xpSession=null;}if(initialization!=null)initialization.close();destroyed=true;if(taskbarReorder!=null)taskbarReorder.close();if(usageGuide!=null){usageGuide.dismiss();usageGuide=null;}if(playback!=null)playback.release();if(wallpaper!=null)wallpaper.close();if(previews!=null)previews.dismiss();DesktopSounds.stop();if(storageSetup!=null)storageSetup.close();if(weatherLocation!=null)weatherLocation.close();if(tray!=null)tray.stop();if(startup!=null)startup.close();main.removeCallbacksAndMessages(null);worker.shutdownNow();for(DesktopWindow tool:windows.values()){if(tool.body instanceof VistaShell)((VistaShell)tool.body).close();if(tool.body instanceof WeatherPanel)((WeatherPanel)tool.body).close();if(tool.body instanceof BrowserPanel)((BrowserPanel)tool.body).close();if(tool.body instanceof PhotoGallery)((PhotoGallery)tool.body).close();if(tool.body instanceof TaskManagerPanel)((TaskManagerPanel)tool.body).close();if(tool.body instanceof RecyclePanel)((RecyclePanel)tool.body).close();}if(sidebar!=null)sidebar.close();if(weatherLocation!=null)weatherLocation.pause();if(receiverRegistered){unregisterReceiver(packages);unregisterReceiver(timeChanged);}if(Build.VERSION.SDK_INT>=33&&backCallback!=null)getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);super.onDestroy();}
+    @Override protected void onDestroy(){if(xpDocuments!=null)xpDocuments.close();for(DesktopWindow w:windows.values())if(w.body instanceof XpToolPanel)((XpToolPanel)w.body).close();if(autoHide!=null)autoHide.close();if(xpSession!=null){xpSession.setOnDismissListener(null);xpSession.dismiss();xpSession=null;}if(initialization!=null)initialization.close();destroyed=true;if(taskbarReorder!=null)taskbarReorder.close();if(usageGuide!=null){usageGuide.dismiss();usageGuide=null;}if(playback!=null)playback.release();if(wallpaper!=null)wallpaper.close();if(previews!=null)previews.dismiss();DesktopSounds.stop();if(storageSetup!=null)storageSetup.close();if(weatherLocation!=null)weatherLocation.close();if(tray!=null)tray.stop();if(startup!=null)startup.close();main.removeCallbacksAndMessages(null);worker.shutdownNow();for(DesktopWindow tool:windows.values()){if(tool.body instanceof VistaShell)((VistaShell)tool.body).close();if(tool.body instanceof WeatherPanel)((WeatherPanel)tool.body).close();if(tool.body instanceof BrowserPanel)((BrowserPanel)tool.body).close();if(tool.body instanceof PhotoGallery)((PhotoGallery)tool.body).close();if(tool.body instanceof TaskManagerPanel)((TaskManagerPanel)tool.body).close();if(tool.body instanceof RecyclePanel)((RecyclePanel)tool.body).close();}if(sidebar!=null)sidebar.close();if(weatherLocation!=null)weatherLocation.pause();if(receiverRegistered){unregisterReceiver(packages);unregisterReceiver(timeChanged);}if(Build.VERSION.SDK_INT>=33&&backCallback!=null)getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);super.onDestroy();}
 
     void enterBrowserFullscreen(View video){enterFullscreen(video,"Fullscreen video");}
     private void enterFullscreen(View video,String description){
@@ -1820,5 +1858,5 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     private void updateWeatherSummary(){DesktopWindow current=windows.get("@weather");if(current!=null&&current.body instanceof WeatherPanel)((WeatherPanel)current.body).refresh();}
     private void locateWeather(){if(weatherLocation==null)return;if(!weatherLocation.permitted()){LocationAccess.request(this,42,true);return;}weatherLocation.locate();}
-    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] grants){super.onRequestPermissionsResult(request,permissions,grants);if(initialization!=null)initialization.permissionResult(request);DesktopWindow browser=windows.get("@browser");if(browser!=null&&browser.getParent()!=null&&browser.body instanceof BrowserPanel&&((BrowserPanel)browser.body).permissionResult(request))return;if(request==StorageAccess.REQUEST){boolean access=StorageAccess.has(this);storageAllowed=access;filesChanged();if(!access)toast("File access was not enabled. You can still connect individual folders.");return;}if(request==42){if(LocationAccess.permitted(this))weatherLocation.locate();else weatherLocation.denied();}}
+    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] grants){super.onRequestPermissionsResult(request,permissions,grants);if(request==6201){DesktopWindow w=windows.get("@recorder");if(w!=null&&w.body instanceof XpToolPanel)((XpToolPanel)w.body).say(xpToolHost.microphone()?"Microphone allowed • press Record":"Microphone not allowed • you can allow it in App Info");return;}if(initialization!=null)initialization.permissionResult(request);DesktopWindow browser=windows.get("@browser");if(browser!=null&&browser.getParent()!=null&&browser.body instanceof BrowserPanel&&((BrowserPanel)browser.body).permissionResult(request))return;if(request==StorageAccess.REQUEST){boolean access=StorageAccess.has(this);storageAllowed=access;filesChanged();if(!access)toast("File access was not enabled. You can still connect individual folders.");return;}if(request==42){if(LocationAccess.permitted(this))weatherLocation.locate();else weatherLocation.denied();}}
 }

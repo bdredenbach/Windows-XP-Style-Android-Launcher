@@ -41,6 +41,7 @@ final class AeroIcon extends View {
             return;
         }
         if(XpIconAssets.draw(getContext(),canvas,kind,Math.round(64*s))){canvas.restore();return;}
+        if(XpProgramArtwork.draw(canvas,kind)){canvas.restore();return;}
         if(XpArtwork.draw(canvas,kind)){canvas.restore();return;}
         if(VistaArtwork.draw(canvas,kind)){canvas.restore();return;}
         if (kind.equals("computer")) {

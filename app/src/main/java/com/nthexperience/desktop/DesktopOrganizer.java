@@ -89,6 +89,7 @@ final class DesktopOrganizer extends VistaShell {
     private void picker(String target){
         String folder=folderId(target);if(folder!=null&&!store.isFolder(folder)){navigate("desktop");return;}address.setText("Add programs  ›  "+(folder!=null?host.label(folder):target.equals("quick")?"Quick Launch":"Desktop"));
         List<String> available=new ArrayList<>(Arrays.asList("@computer","@browser","@photos",MediaLibrary.PLAYER,MediaLibrary.CENTER,"@files","@notes","@appearance","@control","@calendar","@sticky","@filemanagers","@backup","@taskmanager","@recycle","@workspaces","@recent"));
+        for(XpPrograms.Program program:XpPrograms.ALL)available.add(program.id);
         Iterator<String> locations=FolderLinks.list(store).keys();while(locations.hasNext())available.add(locations.next());for(AppCatalog.Entry app:apps.get())if(!available.contains(app.id))available.add(app.id);
         if(folder==null){Iterator<String> keys=store.folders().keys();while(keys.hasNext())available.add(keys.next());}
         available.sort((a,b)->java.text.Collator.getInstance().compare(host.label(a),host.label(b)));available.removeIf(id->!host.label(id).toLowerCase(Locale.getDefault()).contains(query()));

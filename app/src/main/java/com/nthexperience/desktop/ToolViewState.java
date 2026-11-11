@@ -14,7 +14,7 @@ final class ToolViewState {
         if(view instanceof PhotoGallery){GadgetLayout.put(item,"photo",((PhotoGallery)view).state());GadgetLayout.put(result,path,item);return;}
         if(view instanceof VistaShell){GadgetLayout.put(item,"shell",((VistaShell)view).state());GadgetLayout.put(result,path,item);return;}
         if(view instanceof EditText){EditText text=(EditText)view;String description=String.valueOf(text.getContentDescription());
-            if(!description.equals("Notepad text")&&!description.equals("Sticky note text"))GadgetLayout.put(item,"text",text.getText().toString().substring(0,Math.min(2000,text.length())));
+            if(!description.equals("Notepad text")&&!description.equals("Sticky note text")&&!description.equals("WordPad document"))GadgetLayout.put(item,"text",text.getText().toString().substring(0,Math.min(2000,text.length())));
             GadgetLayout.put(item,"start",text.getSelectionStart());GadgetLayout.put(item,"end",text.getSelectionEnd());GadgetLayout.put(item,"focus",text.hasFocus());
         }
         if(view instanceof MonthCalendarView){MonthCalendarView calendar=(MonthCalendarView)view;GadgetLayout.put(item,"month",calendar.monthTime());GadgetLayout.put(item,"selected",calendar.selected().getTime());}

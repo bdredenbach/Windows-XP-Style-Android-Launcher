@@ -1,9 +1,21 @@
 # Nth Desktop XP
 
-An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.6.0**.
+An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.7.0**.
 
 Android 8.0 or newer. Target SDK 36. Application ID: `com.nthexperience.desktop.xp`.
 It installs alongside Vista, Seven, Eight, Ten and Eleven.
+
+## XP Accessories, games and system tools — 0.7.0
+
+Sixteen new programs add Paint, WordPad, Character Map, Command Prompt, Sound
+Recorder, Magnifier, Narrator, On-Screen Keyboard, System Information, Disk Cleanup,
+Nth desktop restore points, Files and Settings Transfer, Search Companion,
+Minesweeper, Solitaire and FreeCell. Start folders, Search, Run, shortcut backups
+and restored windows use one program catalog. Explorer gains ZIP creation,
+inspection/extraction and editing links for Paint/WordPad.
+
+[Feature coverage and remaining XP gaps](docs/XP_FEATURE_COVERAGE.md) ·
+[Implementation and checks](docs/XP_0_7_FEATURES.md).
 
 ## Shell and Media Player polish — 0.6.0
 
