@@ -51,6 +51,10 @@ final class DesktopStore {
     void photos(List<String> ids){save("gadget_photos",ids);}
     List<String> startPins(){return list("start_pins",Arrays.asList("@browser","@notes"));}
     void startPins(List<String> ids){save("start_pins",ids);}
+    List<String> startExcluded(){return list("xp_start_excluded",Collections.emptyList());}
+    void startExcluded(List<String> ids){save("xp_start_excluded",ids);}
+    List<String> startDeleted(){return list("xp_start_deleted",Collections.emptyList());}
+    void startDeleted(List<String> ids){save("xp_start_deleted",ids);}
     List<String> recents() { return list("recents", new ArrayList<>()); }
     List<String> taskbarOrder(){return list(TaskbarOrder.KEY,Collections.emptyList());}
     void taskbarOrder(List<String> ids){save(TaskbarOrder.KEY,TaskbarOrder.clean(ids));}

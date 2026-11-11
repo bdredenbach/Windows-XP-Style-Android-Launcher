@@ -94,6 +94,7 @@ jobs:
             xp-polish.txt
             xp-features.txt
             xp-tidy.txt
+            xp-start.txt
             xp-logcat.txt
             xp-activities.txt
             screenshots/

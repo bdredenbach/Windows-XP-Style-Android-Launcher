@@ -39,6 +39,9 @@ final class DesktopContextMenu {
     }
     void checked(String title,boolean checked,Runnable action){item(title,checked?"checked":"empty",action);}
     void submenu(String title,String icon,Runnable action){item(title,icon,action);LinearLayout row=(LinearLayout)items.getChildAt(items.getChildCount()-1);TextView arrow=Aero.text(context,"▸",12,Color.BLACK);arrow.setTextColor(XpControls.menuInk(Color.BLACK));arrow.setDuplicateParentStateEnabled(true);row.addView(arrow,new LinearLayout.LayoutParams(dp(20),-1));}
+    void contextualItem(String title,String icon,Runnable action,java.util.function.Consumer<View> options){item(title,icon,action);bindLast(options);}
+    void contextualSubmenu(String title,String icon,Runnable action,java.util.function.Consumer<View> options){submenu(title,icon,action);bindLast(options);}
+    private void bindLast(java.util.function.Consumer<View> options){View row=items.getChildAt(items.getChildCount()-1);ContextMenus.bind(row,(x,y)->options.accept(row));}
     void separator(){LinearLayout row=new LinearLayout(context);row.setPadding(dp(28),dp(3),dp(3),dp(3));View line=new View(context);line.setBackgroundColor(0xffaca899);row.addView(line,new LinearLayout.LayoutParams(-1,dp(1)));items.addView(row,new LinearLayout.LayoutParams(-1,dp(7)));}
     void show(View root,float screenX,float screenY,int leftInset,int topInset,int rightInset,int bottomInset){
         if(owner!=null){owner.removeOnAttachStateChangeListener(lifetime);owner.removeOnLayoutChangeListener(bounds);}owner=root;root.addOnAttachStateChangeListener(lifetime);root.addOnLayoutChangeListener(bounds);int[] location=new int[2];root.getLocationOnScreen(location);int left=location[0]+leftInset+dp(3),top=location[1]+topInset+dp(3),right=location[0]+root.getWidth()-rightInset-dp(3),bottom=location[1]+root.getHeight()-bottomInset-dp(3);

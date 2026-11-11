@@ -726,6 +726,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     }
     private String label(String id){return store.name(id,defaultLabel(id));}
     private String defaultLabel(String id){
+        String startTitle=XpStartMenus.title(id,"");if(!startTitle.isEmpty())return startTitle;
         if(XpPrograms.valid(id))return XpPrograms.get(id).title;
         JSONObject location=FolderLinks.get(store,id);if(location!=null)return location.optString("title","Folder");
         if(id.startsWith("@gadget:")&&GadgetCatalog.extra(id.substring(8)))return GadgetCatalog.title(id.substring(8));
@@ -799,7 +800,14 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             Aero.dialog(this).setTitle("App unavailable").setMessage("This app may have been removed or disabled.").setPositiveButton("Remove shortcut",(d,w)->{List<String> ids=store.desktop();ids.remove(id);store.desktop(ids);renderDesktop();}).setNegativeButton("Keep",null).show();scanApps();
         }
     }
-    @Override public void options(View anchor,String id){ContextMenus.centered(anchor,(x,y)->shortcutMenu(anchor,id,"desktop",x,y));}
+    @Override public void options(View anchor,String id){options(anchor,id,XpStartMenus.HOME);}
+    @Override public void options(View anchor,String id,String source){
+        ContextMenus.centered(anchor,(x,y)->XpStartMenus.show(this,startMenu,x,y,store,id,source,label(id),new ShortcutMenus.Host(){
+            public void open(String value){MainActivity.this.open(value);}
+            public void rename(String value){startMenu.hide();organizer("@organize","rename:"+value);}
+            public void changed(){desktopChanged();}
+        }));
+    }
     private void shortcutMenu(View anchor,String id,String source,float x,float y){
         if(id.equals("@recycle")&&source.equals("desktop")){
             DesktopContextMenu menu=new DesktopContextMenu(this,"Recycle Bin desktop menu");
@@ -878,7 +886,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
     private void manageShortcuts(){organizer("@organize","desktop");}
     private void filesChanged(){refreshRecycleIcon();if(destroyed)return;for(DesktopWindow tool:windows.values())if(tool.getParent()!=null){if(tool.body instanceof VistaExplorer)((VistaExplorer)tool.body).refreshFiles();else if(tool.body instanceof DesktopOrganizer)((DesktopOrganizer)tool.body).refreshApps();else if(tool.body instanceof RecyclePanel)((RecyclePanel)tool.body).refresh();}renderDesktop();renderTaskbar();}
     private void desktopChanged(){
-        layoutWorkspace();renderDesktop();renderTaskbar();
+        layoutWorkspace();renderDesktop();renderTaskbar();if(startMenu!=null)startMenu.refresh();
         for(Map.Entry<String,DesktopWindow> entry:new ArrayList<>(windows.entrySet())){DesktopWindow window=entry.getValue();if(window.getParent()==null)continue;if(window.body instanceof DesktopOrganizer)((DesktopOrganizer)window.body).refreshApps();else if(window.body instanceof RecyclePanel)((RecyclePanel)window.body).refresh();}
         refreshRecycleIcon();renderTaskbar();
     }

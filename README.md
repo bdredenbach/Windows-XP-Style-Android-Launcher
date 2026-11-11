@@ -1,9 +1,21 @@
 # Nth Desktop XP
 
-An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.7.1**.
+An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.7.2**.
 
 Android 8.0 or newer. Target SDK 36. Application ID: `com.nthexperience.desktop.xp`.
 It installs alongside Vista, Seven, Eight, Ten and Eleven.
+
+## Start menu context actions — 0.7.2
+
+Hold or right-click shortcuts in Start, All Programs and its subfolders for
+XP-style Open, Send To > Desktop (create shortcut), Copy, pin/unpin, Rename and
+Properties. Removing a home-list entry or deleting an All Programs shortcut
+keeps the installed app and desktop shortcut. All Programs offers restoration
+of deleted shortcuts. Program groups, right-side destinations, recent documents,
+profile and session commands have their own applicable menus. Android Uninstall
+remains available for removable installed apps; Android asks for confirmation.
+
+[Research, Android adaptations and checks](docs/XP_0_7_2_START_MENUS.md).
 
 ## Final XP menu and control polish — 0.7.1
 
