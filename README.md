@@ -25,6 +25,12 @@ Nth/Android settings.
 
 [Scope, references and validation](docs/XP_0_4_GUIDE_POLISH.md).
 
+[Final 0.4.0 verification](https://github.com/bdredenbach/Windows-XP-Style-Android-Launcher/actions/runs/42933218439)
+passed 109 unit tests, 94 launcher checks per emulator and the full independent-row
+suite on Android 11 and Android 16. It includes 156 Activity renders and 31 native
+core captures per API. Reordering now suppresses queued focus scrolling until drop
+or cancel, preserving the opposite row during edge drags.
+
 ## XP visual pass — 0.3.0
 
 The shared shell now uses tighter Luna title bars, original XP.css caption artwork,
