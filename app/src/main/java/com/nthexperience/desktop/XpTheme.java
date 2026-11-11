@@ -47,6 +47,7 @@ final class XpTheme {
     }
     static Drawable chrome(Context c,int style){return new Chrome(c,style,true);}
     static Drawable chrome(Context c,int style,boolean active){return new Chrome(c,style,active);}
+    static Drawable caption(Context c){return new Drawable(){final Paint ink=new Paint(Paint.ANTI_ALIAS_FLAG);public void draw(Canvas canvas){Rect b=getBounds();int[] colors=palette(c);boolean classic=scheme(c)==5;ink.setShader(classic?new LinearGradient(b.left,0,b.right,0,0xff0a246a,0xffa6caf0,Shader.TileMode.CLAMP):new LinearGradient(0,b.top,0,b.bottom,new int[]{colors[0],colors[1],colors[1],colors[2]},null,Shader.TileMode.CLAMP));canvas.drawRect(b,ink);ink.setShader(null);}public void setAlpha(int alpha){ink.setAlpha(alpha);}public void setColorFilter(ColorFilter filter){ink.setColorFilter(filter);}public int getOpacity(){return PixelFormat.OPAQUE;}};}
     private static final class Chrome extends Drawable {
         final Context context;final int style;final boolean active;final Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
         Chrome(Context context,int style,boolean active){this.context=context;this.style=style;this.active=active;}

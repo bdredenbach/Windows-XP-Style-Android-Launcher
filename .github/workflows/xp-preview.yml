@@ -40,6 +40,7 @@ jobs:
             app/build/xp-upgrade-rendered/
             app/build/xp-polish-rendered/
             app/build/xp-features-rendered/
+            app/build/xp-tidy-rendered/
   native:
     needs: build
     runs-on: ubuntu-latest
@@ -92,6 +93,7 @@ jobs:
             xp-rows.txt
             xp-polish.txt
             xp-features.txt
+            xp-tidy.txt
             xp-logcat.txt
             xp-activities.txt
             screenshots/

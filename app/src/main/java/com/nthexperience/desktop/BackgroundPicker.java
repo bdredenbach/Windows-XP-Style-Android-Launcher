@@ -189,7 +189,7 @@ final class BackgroundPicker extends LinearLayout {
                 ImageView image=new ImageView(getContext());image.setScaleType(ImageView.ScaleType.CENTER_CROP);
                 art.addView(image,new FrameLayout.LayoutParams(-1,-1));loadThumbnail(key,image);
             }
-            CheckBox check=new CheckBox(getContext());
+            CheckBox check=XpWidgets.check(getContext());
             check.setContentDescription("Include background: "+name);
             check.setChecked(selected.contains(key));boxes.put(key,check);
             check.setBackgroundColor(0xc8f7fcff);

@@ -25,7 +25,7 @@
         <item name="android:padding">5dp</item><item name="android:minHeight">32dp</item><item name="android:textColor">#000000</item><item name="android:textColorHint">#777777</item><item name="android:textSize">12sp</item>
     </style>
     <style name="XpSpinner" parent="android:style/Widget.Material.Spinner">
-        <item name="android:background">@drawable/xp_combobox</item><item name="android:backgroundTint">@null</item><item name="android:minHeight">32dp</item><item name="android:paddingStart">6dp</item><item name="android:paddingEnd">26dp</item>
+        <item name="android:background">@drawable/xp_combobox</item><item name="android:backgroundTint">@null</item><item name="android:minHeight">32dp</item><item name="android:paddingStart">6dp</item><item name="android:paddingEnd">26dp</item><item name="android:popupBackground">@drawable/aero_popup</item>
     </style>
     <style name="XpSpinnerItem" parent="android:style/Widget.TextView.SpinnerItem"><item name="android:textSize">12sp</item><item name="android:checkMark">@null</item><item name="android:textColor">#000000</item><item name="android:fontFamily">@font/xp_ui</item></style>
     <style name="XpSpinnerDropdown" parent="android:style/Widget.DropDownItem.Spinner"><item name="android:textSize">12sp</item><item name="android:minHeight">36dp</item><item name="android:checkMark">@null</item><item name="android:textColor">#000000</item><item name="android:fontFamily">@font/xp_ui</item></style>

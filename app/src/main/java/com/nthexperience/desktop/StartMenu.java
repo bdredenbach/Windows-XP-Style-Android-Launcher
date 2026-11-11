@@ -67,13 +67,13 @@ final class StartMenu extends LinearLayout {
     private void programMenu(View anchor,String group){
         if(flyout!=null)flyout.dismiss();flyout=new DesktopContextMenu(getContext(),group.isEmpty()?"All Programs":group,30,250);
         if(group.isEmpty()){
-            flyout.item("Accessories  ►","files",()->programMenu(programs,"Accessories"));flyout.item("Games  ►","games",()->programMenu(programs,"Games"));
+            flyout.submenu("Accessories","files",()->programMenu(programs,"Accessories"));flyout.submenu("Games","games",()->programMenu(programs,"Games"));
             flyout.item(MediaLibrary.PLAYER_TITLE,"mediaplayer",()->actions.open(MediaLibrary.PLAYER));flyout.item(MediaLibrary.CENTER_TITLE,"mediacenter",()->actions.open(MediaLibrary.CENTER));flyout.separator();
             Iterator<String> folders=store.folders().keys();while(folders.hasNext()){String id=folders.next();flyout.item(store.name(id,"Folder"),"folderapps",()->actions.open(id));}
             for(AppCatalog.Entry app:all)flyout.item(store.name(app.id,app.label),"programs",()->actions.open(app.id));
         }else{
             String[][] items=group.equals("Accessories")?new String[][]{{"Notepad","@notes","notes"},{"Calculator","@gadget:calculator","calculator"},{"Nth Explorer","@files","files"},{"My Pictures","@photos","pictures"},{"Task Manager","@taskmanager","taskmanager"},{"Backup and Restore","@backup","drive"}}:new String[][]{{"Tile Puzzle","@gadget:puzzle","puzzle"},{"Dice Roller","@gadget:dice","dice"}};
-            if(group.equals("Accessories")){for(String name:new String[]{"Accessibility","Entertainment","System Tools"})flyout.item(name+"  ►","folderapps",()->programMenu(programs,name));}
+            if(group.equals("Accessories")){for(String name:new String[]{"Accessibility","Entertainment","System Tools"})flyout.submenu(name,"folderapps",()->programMenu(programs,name));}
             for(XpPrograms.Program program:XpPrograms.ALL)if(program.group.equals(group))flyout.item(program.title,program.icon,()->actions.open(program.id));
             if(group.equals("Accessories")||group.equals("Games"))for(String[] item:items)flyout.item(item[0],item[2],()->actions.open(item[1]));flyout.separator();flyout.item("Back to All Programs","files",()->programMenu(programs,""));
         }

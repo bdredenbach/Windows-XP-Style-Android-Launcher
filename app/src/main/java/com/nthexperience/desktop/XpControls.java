@@ -10,11 +10,13 @@ import android.graphics.drawable.StateListDrawable;
 final class XpControls {
     static StateListDrawable menuSelection(Context context){
         StateListDrawable d=new StateListDrawable();
+        d.addState(new int[]{-android.R.attr.state_enabled},Aero.panel(context,0,0,0,0));
         for(int state:new int[]{android.R.attr.state_pressed,android.R.attr.state_focused,android.R.attr.state_hovered,android.R.attr.state_selected})d.addState(new int[]{state},Aero.panel(context,0xff316ac5,0xff316ac5,0,0));
         d.addState(new int[]{},Aero.panel(context,0,0,0,0));return d;
     }
     static ColorStateList menuInk(int normal){return new ColorStateList(new int[][]{{-android.R.attr.state_enabled},{android.R.attr.state_pressed},{android.R.attr.state_focused},{android.R.attr.state_hovered},{android.R.attr.state_selected},{}},new int[]{0xff808080,Color.WHITE,Color.WHITE,Color.WHITE,Color.WHITE,normal});}
     static Drawable button(Context c){return new Control(c,0);}
+    static Drawable toolbar(Context c){StateListDrawable d=new StateListDrawable();d.addState(new int[]{-android.R.attr.state_enabled},Aero.panel(c,0,0,0,0));d.addState(new int[]{android.R.attr.state_pressed},Aero.panel(c,0xffc1d2ee,0xffc1d2ee,0,0xff316ac5));for(int state:new int[]{android.R.attr.state_hovered,android.R.attr.state_focused})d.addState(new int[]{state},Aero.panel(c,0xffe0e8f8,0xffe0e8f8,0,0xff316ac5));d.addState(new int[]{},Aero.panel(c,0,0,0,0));return d;}
     static Drawable tab(Context c){return new Control(c,1);}
     static Drawable notification(Context c,boolean edge){return new Control(c,edge?2:3);}
     private static final class Control extends Drawable {

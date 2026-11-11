@@ -35,4 +35,5 @@
     <instrumentation android:name="com.nthexperience.desktop.XpIndependentRowsSmoke" android:targetPackage="${launcherApplicationId}" android:functionalTest="true" />
     <instrumentation android:name="com.nthexperience.desktop.XpExperienceSmoke" android:targetPackage="${launcherApplicationId}" android:functionalTest="true" />
     <instrumentation android:name="com.nthexperience.desktop.XpFeaturesSmoke" android:targetPackage="${launcherApplicationId}" android:functionalTest="true" />
+    <instrumentation android:name="com.nthexperience.desktop.XpTidySmoke" android:targetPackage="${launcherApplicationId}" android:functionalTest="true" />
 </manifest>

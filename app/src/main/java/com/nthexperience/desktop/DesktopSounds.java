@@ -54,7 +54,7 @@ final class DesktopSounds {
             CheckBox check=Aero.check(context,option[1],store.prefs.getBoolean(option[0],!option[0].equals("desktop_sounds")));
             check.setOnCheckedChangeListener((button,value)->store.prefs.edit().putBoolean(option[0],value).apply());body.addView(check);
         }
-        SeekBar volume=new SeekBar(context);volume.setContentDescription("Desktop sound volume");volume.setMax(100);volume.setProgress(store.prefs.getInt("desktop_sound_volume",30));
+        SeekBar volume=XpWidgets.seek(context);volume.setContentDescription("Desktop sound volume");volume.setMax(100);volume.setProgress(store.prefs.getInt("desktop_sound_volume",30));
         volume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             public void onStartTrackingTouch(SeekBar b){}
             public void onStopTrackingTouch(SeekBar b){play(context,"complete");}

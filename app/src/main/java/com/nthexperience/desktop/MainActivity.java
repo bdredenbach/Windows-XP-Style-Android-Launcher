@@ -239,8 +239,8 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
             renderTaskbar();
         });
         tray=new SystemTray(this,workspace,wallpaper,new SystemTray.Host(){public void action(String id){vistaAction(id);}public void open(String id){MainActivity.this.open(id);}public void layout(){main.post(()->{layoutWorkspace();renderTaskbar();});}public void opening(){if(previews!=null)previews.dismiss();startMenu.hide();((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(root.getWindowToken(),0);}});taskbar.addView(tray,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
-        clock=Aero.text(this,"",11,XpTheme.taskbarInk(this));clock.setGravity(Gravity.CENTER);clock.setSingleLine(true);clock.setIncludeFontPadding(false);clock.setPadding(dp(5),0,dp(5),0);clock.setMinWidth(dp(62));taskbar.notificationStartsAt(tray);clock.setOnClickListener(v->open("@clock"));clock.setContentDescription("Clock and calendar");taskbar.addView(clock,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
-        FrameLayout peek=new FrameLayout(this);desktopToggle=peek;View peekStrip=new AeroIcon(this,"showdesktop");peek.addView(peekStrip,new FrameLayout.LayoutParams(dp(22),dp(22),Gravity.CENTER));peek.setContentDescription("Show desktop");peek.setOnClickListener(v->{previews.dismiss();showDesktop();});ContextMenus.bind(peek,(x,y)->taskbarMenu(peek,x,y));peek.setTooltipText("Show desktop");taskbar.addView(peek,2,new LinearLayout.LayoutParams(dp(28),dp(XpMetrics.ROW)));taskbarSlot=new View(this);taskbarSlot.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);shell.addView(taskbarSlot,new LinearLayout.LayoutParams(-1,dp(XpMetrics.TASKBAR)));root.addView(taskbar,new FrameLayout.LayoutParams(-1,dp(XpMetrics.TASKBAR),Gravity.BOTTOM));autoHide=new XpTaskbarAutoHide(root,taskbar,taskbarSlot,()->startMenu!=null&&startMenu.getVisibility()==View.VISIBLE||tray!=null&&tray.showing()||desktopMenu!=null&&desktopMenu.showing()||taskbarReorder!=null&&taskbarReorder.dragging()||taskItems instanceof TaskbarItems&&((TaskbarItems)taskItems).touching());taskbar.getViewTreeObserver().addOnPreDrawListener(()->{syncTaskbarBounds();return true;});applyTaskbarRows();renderTaskbar();
+        clock=Aero.text(this,"",11,XpTheme.taskbarInk(this));clock.setGravity(Gravity.CENTER);clock.setSingleLine(true);clock.setIncludeFontPadding(false);clock.setPadding(dp(5),0,dp(5),0);clock.setMinWidth(dp(62));taskbar.notificationStartsAt(tray);clock.setOnClickListener(v->open("@clock"));clock.setContentDescription("Clock and calendar");ContextMenus.bind(clock,(x,y)->clockMenu(clock,x,y));taskbar.addView(clock,new LinearLayout.LayoutParams(-2,dp(XpMetrics.ROW)));
+        FrameLayout peek=new FrameLayout(this);desktopToggle=peek;View peekStrip=new AeroIcon(this,"showdesktop");peek.addView(peekStrip,new FrameLayout.LayoutParams(dp(16),dp(16),Gravity.CENTER));peek.setContentDescription("Show desktop");peek.setOnClickListener(v->{previews.dismiss();showDesktop();});ContextMenus.bind(peek,(x,y)->taskbarMenu(peek,x,y));peek.setTooltipText("Show desktop");taskbar.addView(peek,2,new LinearLayout.LayoutParams(dp(28),dp(XpMetrics.ROW)));taskbarSlot=new View(this);taskbarSlot.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);shell.addView(taskbarSlot,new LinearLayout.LayoutParams(-1,dp(XpMetrics.TASKBAR)));root.addView(taskbar,new FrameLayout.LayoutParams(-1,dp(XpMetrics.TASKBAR),Gravity.BOTTOM));autoHide=new XpTaskbarAutoHide(root,taskbar,taskbarSlot,()->startMenu!=null&&startMenu.getVisibility()==View.VISIBLE||tray!=null&&tray.showing()||desktopMenu!=null&&desktopMenu.showing()||taskbarReorder!=null&&taskbarReorder.dragging()||taskItems instanceof TaskbarItems&&((TaskbarItems)taskItems).touching());taskbar.getViewTreeObserver().addOnPreDrawListener(()->{syncTaskbarBounds();return true;});applyTaskbarRows();renderTaskbar();
     }
     private void applyTaskbarRows(){
         if(taskbarView==null)return;
@@ -705,7 +705,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         if(showLabel)button.setPadding(dp(6),0,dp(5),0);
         button.setFocusable(true);
         DesktopWindow window=windows.get(id);
-        int side=showLabel?18:24;
+        int side=16;
         View image=window!=null&&window.body instanceof VistaExplorer&&((VistaExplorer)window.body).page().startsWith("folder:")
                 ?new AeroIcon(this,"files"):icon(id,side);
         button.addView(image,new LinearLayout.LayoutParams(dp(side),dp(side)));
@@ -916,6 +916,9 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         owner.restore();
     }
     private List<DesktopWindow> orderedWindows(){List<DesktopWindow> result=new ArrayList<>();for(int i=0;i<workspace.getChildCount();i++)if(workspace.getChildAt(i) instanceof DesktopWindow)result.add((DesktopWindow)workspace.getChildAt(i));return result;}
+    private void clockMenu(View anchor,float x,float y){
+        if(desktopMenu!=null)desktopMenu.dismiss();startMenu.hide();if(tray!=null)tray.dismiss();desktopMenu=new DesktopContextMenu(this,"XP clock context menu");desktopMenu.item("Adjust Date/Time","empty",()->open("@clock"));desktopMenu.item("Customize Notifications…","empty",()->tray.customize());desktopMenu.separator();desktopMenu.checked("Lock the taskbar",store.prefs.getBoolean(XpTaskbarAutoHide.LOCK,false),()->{store.prefs.edit().putBoolean(XpTaskbarAutoHide.LOCK,!store.prefs.getBoolean(XpTaskbarAutoHide.LOCK,false)).apply();if(taskbarReorder!=null)taskbarReorder.cancel();});desktopMenu.item("Properties","empty",()->open("setting:page:taskbar"));ContextMenus.show(desktopMenu,anchor,x,y);
+    }
     private void taskbarMenu(View anchor,float x,float y){
         previews.dismiss();
         if(desktopMenu!=null)desktopMenu.dismiss();startMenu.hide();if(tray!=null)tray.dismiss();desktopMenu=new DesktopContextMenu(this,"Taskbar context menu");
@@ -1300,6 +1303,7 @@ public final class MainActivity extends Activity implements StartMenu.Actions,Ga
         if(id.startsWith("gadget:")&&GadgetCatalog.valid(id.substring(7))){gadgetAction(id.substring(7));return;}
         switch(id){
             case "sidebar-show":sidebar.visible(false);return;case "sidebar-hide":sidebar.visible(false);renderTaskbar();return;case "sidebar-apply":renderTaskbar();return;
+            case "tray-customize":tray.customize();return;
             case "taskbar-refresh":applyTaskbarRows();layoutWorkspace();renderTaskbar();return;
             case "taskbar-usage-welcome":
                 if(ExternalTasks.permitted(this))open("setting:page:taskbar");

@@ -1,9 +1,20 @@
 # Nth Desktop XP
 
-An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.7.0**.
+An XP-inspired Android launcher by **An Nth Experience**. Current preview: **0.7.1**.
 
 Android 8.0 or newer. Target SDK 36. Application ID: `com.nthexperience.desktop.xp`.
 It installs alongside Vista, Seven, Eight, Ten and Eleven.
+
+## Final XP menu and control polish — 0.7.1
+
+Small notification-area artwork now shows battery, network, limited-connection and
+mute states. Tray icons and clock have XP-style hold/right-click menus. The
+compact volume popup has a vertical trackbar, persistent mute restoration and
+working touch, keyboard and accessibility input. Notification icon choices are
+staged behind OK/Cancel. Shared menus, sliders, meters, radio/check controls,
+toolbars and dialog captions follow Luna/Classic styling across all six schemes.
+
+[Polish scope and verification](docs/XP_0_7_1_TIDY.md).
 
 ## XP Accessories, games and system tools — 0.7.0
 

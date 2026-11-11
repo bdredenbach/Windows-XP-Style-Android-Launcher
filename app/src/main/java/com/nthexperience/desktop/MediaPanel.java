@@ -131,11 +131,9 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
 
         LinearLayout timeline = new LinearLayout(context);
         timeline.setGravity(Gravity.CENTER_VERTICAL);
-        seek = new SeekBar(context);
+        seek = XpWidgets.seek(context);
         seek.setContentDescription("Seek media");
         seek.setMax(1000);
-        seek.setProgressTintList(ColorStateList.valueOf(0xff67b8ec));
-        seek.setThumbTintList(ColorStateList.valueOf(0xffc2ecff));
         timeline.addView(seek, new LayoutParams(0, dp(33), 1));
         time = label("0:00 / 0:00", 11);
         time.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
@@ -432,7 +430,7 @@ final class MediaPanel extends LinearLayout implements Player.Listener {
         ContextMenus.centered(anchor, (x, y) -> ContextMenus.show(menu, anchor, x, y));
     }
     private void volume() {
-        SeekBar volume = new SeekBar(getContext());
+        SeekBar volume = XpWidgets.seek(getContext());
         volume.setMax(100);
         volume.setProgress(Math.round(playback.player.getVolume() * 100));
         volume.setContentDescription("Media volume");
