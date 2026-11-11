@@ -36,7 +36,7 @@ final class XpStartMenus {
             });
             ContextMenus.show(send,anchor,x,y);
         });
-        if(!place&&source.equals(HOME)&&store.startPins().contains(id))menu.item("Cut","empty",()->{ExplorerClipboard.shortcuts(Collections.singletonList(id),"start-pins",true);});
+        if(!place&&source.equals(HOME)&&store.startPins().contains(id)&&!id.equals("@browser")&&!id.equals("xp:mail"))menu.item("Cut","empty",()->{ExplorerClipboard.shortcuts(Collections.singletonList(id),"start-pins",true);});
         if(source.equals(PROGRAMS))menu.item("Cut","empty",()->{ExplorerClipboard.shortcuts(Collections.singletonList(id),"start-programs",true);});
         menu.item("Copy","empty",()->{ExplorerClipboard.shortcuts(Collections.singletonList(id),"start-pins",false);});
         if(store.isFolder(id))menu.item("Paste","empty",!ExplorerClipboard.shortcuts.isEmpty(),()->ShortcutMenus.paste(c,store,"contents:"+id,host));

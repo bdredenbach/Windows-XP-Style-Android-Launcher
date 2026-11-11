@@ -48,7 +48,7 @@ public class XpStartContextTest {
     }
     @Test public void unpinAndRemoveHaveDifferentSemantics(){
         store.startPins(Collections.singletonList(APP));store.launched(APP);menu(APP,XpStartMenus.HOME);click("Unpin from Start menu");assertFalse(store.startPins().contains(APP));assertFalse(store.startExcluded().contains(APP));assertTrue(store.recents().contains(APP));
-        menu("@browser",XpStartMenus.HOME);click("Remove from This List");assertNull(find(start,"Open Programs: "+BrowserPanel.NAME));
+        menu("@browser",XpStartMenus.HOME);assertNull(find(popup().getContentView(),"Cut"));click("Remove from This List");assertNull(find(start,"Open Programs: "+BrowserPanel.NAME));
     }
     @Test public void allProgramsAndNestedAccessoriesHaveRealHoldHandlersWithoutLaunching(){
         find(start,"All Programs").performClick();assertTrue(command("Test app").performContextClick());assertEquals(XpStartMenus.PROGRAMS,selectedSource);assertNull(opened);assertNotNull(command("Send To"));popup().dismiss();
